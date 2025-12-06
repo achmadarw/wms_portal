@@ -1,0 +1,253 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// User & Authentication Models
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  fullName  String
+  role      String   @default("OPERATOR") // ADMIN, SUPERVISOR, OPERATOR
+  
+  // Profile
+  avatar    String?
+  phone     String?
+  active    Boolean  @default(true)
+  lastLogin DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  managedWarehouse Warehouse? @relation("WarehouseManager")
+  
+  activities  Activity[]
+  movements   Movement[] @relation("CreatedBy")
+
+  @@index([email])
+}
+
+// Note: SQLite doesn't support enums, using String with comments for reference
+
+// Warehouse & Location Models
+model Warehouse {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  
+  // Address
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  country     String
+  
+  // Manager
+  manager     User?    @relation("WarehouseManager", fields: [managerId], references: [id])
+  managerId   String?  @unique
+  
+  // Status
+  active      Boolean  @default(true)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  bins        Bin[]
+  items       InventoryItem[]
+  movements   Movement[]
+  reports     StockReport[]
+  
+  @@index([code])
+  @@index([active])
+}
+
+model Bin {
+  id          String   @id @default(cuid())
+  code        String
+  name        String
+  
+  // Location
+  row         Int
+  column      Int
+  level       Int
+  
+  // Capacity
+  maxCapacity Int      @default(100)
+  currentQty  Int      @default(0)
+  
+  // Status
+  active      Boolean  @default(true)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouseId String
+  
+  items       InventoryItem[]
+  
+  @@unique([warehouseId, code])
+  @@index([warehouseId])
+}
+
+// Inventory Models
+model ItemMaster {
+  id            String   @id @default(cuid())
+  sku           String   @unique
+  name          String
+  description   String?
+  category      String
+  
+  // Physical Properties
+  unitOfMeasure String   @default("PCS")
+  weight        Float?
+  dimensions    String?
+  
+  // Cost
+  unitCost      Float    @default(0)
+  sellingPrice  Float?
+  
+  // Status
+  active        Boolean  @default(true)
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  inventoryItems InventoryItem[]
+  
+  @@index([sku])
+  @@index([category])
+  @@index([active])
+}
+
+model InventoryItem {
+  id            String   @id @default(cuid())
+  quantity      Int      @default(0)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  itemMaster    ItemMaster @relation(fields: [itemMasterId], references: [id], onDelete: Cascade)
+  itemMasterId  String
+  
+  warehouse     Warehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouseId   String
+  
+  bin           Bin?       @relation(fields: [binId], references: [id], onDelete: SetNull)
+  binId         String?
+  
+  movements     Movement[]
+  
+  @@unique([itemMasterId, warehouseId, binId])
+  @@index([itemMasterId])
+  @@index([warehouseId])
+  @@index([binId])
+}
+
+// Movement & Transaction Models
+model Movement {
+  id              String   @id @default(cuid())
+  referenceNo     String   @unique
+  type            String   // INBOUND, OUTBOUND, TRANSFER, ADJUSTMENT, RETURN, DAMAGE
+  quantity        Int
+  
+  // Details
+  notes           String?
+  status          String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+
+  // Source & Destination
+  fromBin         String?
+  toBin           String?
+  
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  item            InventoryItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId          String
+  
+  warehouse       Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouseId     String
+  
+  createdBy       User           @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById     String
+  
+  @@index([referenceNo])
+  @@index([status])
+  @@index([type])
+  @@index([itemId])
+  @@index([warehouseId])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+// Movement Types: INBOUND | OUTBOUND | TRANSFER | ADJUSTMENT | RETURN | DAMAGE
+// Movement Status: PENDING | IN_PROGRESS | COMPLETED | CANCELLED
+
+// Reporting & Analytics
+model StockReport {
+  id          String   @id @default(cuid())
+  reportDate  DateTime @default(now())
+  
+  // Metrics
+  totalItems  Int
+  totalQty    Int
+  totalValue  Float
+  
+  // Details (JSON)
+  details     String   // Serialized JSON of stock levels
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  // Relations
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouseId String
+
+  @@index([warehouseId])
+  @@index([reportDate])
+}
+
+// Audit & Activity Log
+model Activity {
+  id        String   @id @default(cuid())
+  action    String   // e.g., LOGIN, CREATE_ITEM, MOVE_STOCK
+  entity    String   // e.g., USER, ITEM, MOVEMENT
+  entityId  String?
+  
+  details   String?  // JSON description
+  ipAddress String?
+  userAgent String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}

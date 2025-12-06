@@ -1,0 +1,4 @@
+// This file is required for Vercel deployment
+// It's a no-op in Next.js 15 but included for compatibility
+
+export {};
