@@ -59,3 +59,28 @@ export function extractToken(authHeader: string | undefined): string | null {
     if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
     return parts[1];
 }
+
+/**
+ * Middleware helper to verify authentication
+ */
+export function verifyAuthToken(
+    authHeader: string | undefined
+): JWTPayload | null {
+    const token = extractToken(authHeader);
+    if (!token) return null;
+    return verifyToken(token);
+}
+
+/**
+ * Check if user has required role
+ */
+export function hasRole(userRole: string, allowedRoles: string[]): boolean {
+    return allowedRoles.includes(userRole);
+}
+
+/**
+ * Check if user is admin
+ */
+export function isAdmin(userRole: string): boolean {
+    return userRole === 'ADMIN';
+}

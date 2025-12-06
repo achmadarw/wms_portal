@@ -1,0 +1,10 @@
+# Sample CSV format for bulk user import
+
+# Required columns: fullName, email, password, role
+# Optional columns: phone, warehouseCode
+
+fullName,email,password,role,phone,warehouseCode
+John Doe,john.doe@example.com,SecurePass123,OPERATOR,+1234567890,WH-001
+Jane Smith,jane.smith@example.com,SecurePass456,SUPERVISOR,+1234567891,WH-001
+Bob Wilson,bob.wilson@example.com,SecurePass789,OPERATOR,+1234567892,
+Alice Brown,alice.brown@example.com,Admin@123,ADMIN,+1234567893,
