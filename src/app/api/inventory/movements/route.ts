@@ -16,17 +16,23 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const itemMasterId = searchParams.get('itemMasterId');
+        const itemId = searchParams.get('itemId');
         const warehouseId = searchParams.get('warehouseId');
         const type = searchParams.get('type');
+        const status = searchParams.get('status');
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
-        const limit = parseInt(searchParams.get('limit') || '50');
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '20');
 
         const where: any = {};
 
-        if (itemMasterId) {
-            where.itemMasterId = itemMasterId;
+        if (itemId) {
+            where.itemId = itemId;
+        }
+
+        if (status) {
+            where.status = status;
         }
 
         if (warehouseId) {
@@ -50,13 +56,17 @@ export async function GET(request: NextRequest) {
         const movements = await prisma.movement.findMany({
             where,
             include: {
-                itemMaster: {
+                item: {
                     select: {
                         id: true,
-                        sku: true,
-                        name: true,
-                        barcode: true,
-                        unitOfMeasure: true,
+                        itemMaster: {
+                            select: {
+                                sku: true,
+                                name: true,
+                                barcode: true,
+                                unitOfMeasure: true,
+                            },
+                        },
                     },
                 },
                 warehouse: {
@@ -66,24 +76,10 @@ export async function GET(request: NextRequest) {
                         code: true,
                     },
                 },
-                fromBin: {
+                createdBy: {
                     select: {
                         id: true,
-                        code: true,
-                        name: true,
-                    },
-                },
-                toBin: {
-                    select: {
-                        id: true,
-                        code: true,
-                        name: true,
-                    },
-                },
-                createdByUser: {
-                    select: {
-                        id: true,
-                        name: true,
+                        fullName: true,
                         email: true,
                     },
                 },
@@ -91,6 +87,7 @@ export async function GET(request: NextRequest) {
             orderBy: {
                 createdAt: 'desc',
             },
+            skip: (page - 1) * limit,
             take: limit,
         });
 
@@ -144,29 +141,27 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const {
-            itemMasterId,
-            warehouseId,
-            fromBinId,
-            toBinId,
-            quantity,
-            type,
-            reason,
-            referenceNumber,
-        } = body;
+        const { itemId, quantity, type, fromBin, toBin, notes } = body;
 
         // Validate required fields
-        if (!itemMasterId || !warehouseId || !quantity || !type) {
+        if (!itemId || !quantity || !type) {
             return NextResponse.json(
                 {
-                    error: 'Missing required fields: itemMasterId, warehouseId, quantity, type',
+                    error: 'Missing required fields: itemId, quantity, type',
                 },
                 { status: 400 }
             );
         }
 
         // Validate movement type
-        const validTypes = ['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT'];
+        const validTypes = [
+            'INBOUND',
+            'OUTBOUND',
+            'TRANSFER',
+            'ADJUSTMENT',
+            'RETURN',
+            'DAMAGE',
+        ];
         if (!validTypes.includes(type)) {
             return NextResponse.json(
                 {
@@ -178,39 +173,77 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Get item and warehouse for the movement
+        const item = await prisma.inventoryItem.findUnique({
+            where: { id: itemId },
+            select: {
+                warehouseId: true,
+                itemMaster: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        });
+
+        if (!item) {
+            return NextResponse.json(
+                { error: 'Item not found' },
+                { status: 404 }
+            );
+        }
+
+        // Generate reference number
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000)
+            .toString()
+            .padStart(3, '0');
+        const referenceNo = `MOV-${type}-${timestamp}-${random}`;
+
+        // Check authenticated user
+        if (!user.authenticated || !user.payload) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         // Create movement
         const movement = await prisma.movement.create({
             data: {
-                itemMasterId,
-                warehouseId,
-                fromBinId: fromBinId || null,
-                toBinId: toBinId || null,
+                referenceNo,
+                itemId,
+                warehouseId: item.warehouseId,
+                fromBin: fromBin || null,
+                toBin: toBin || null,
                 quantity,
                 type,
-                reason: reason || null,
-                referenceNumber: referenceNumber || null,
-                createdBy: user.userId,
+                notes: notes || null,
+                createdById: user.payload.userId,
             },
             include: {
-                itemMaster: true,
+                item: {
+                    include: {
+                        itemMaster: true,
+                    },
+                },
                 warehouse: true,
-                fromBin: true,
-                toBin: true,
+                createdBy: true,
             },
         });
 
         // Log activity
         await prisma.activity.create({
             data: {
-                userId: user.userId,
+                userId: user.payload.userId,
                 action: 'CREATE_MOVEMENT',
-                entityType: 'Movement',
+                entity: 'MOVEMENT',
                 entityId: movement.id,
                 details: JSON.stringify({
-                    itemName: movement.itemMaster.name,
+                    itemName: item.itemMaster.name,
                     type: movement.type,
                     quantity: movement.quantity,
-                    warehouse: movement.warehouse.name,
+                    referenceNo: movement.referenceNo,
                 }),
             },
         });
