@@ -10,12 +10,71 @@ export async function GET(request: NextRequest) {
             return errorResponse(auth.error || 'Unauthorized', 401);
         }
 
+        const { searchParams } = new URL(request.url);
+        const warehouseId = searchParams.get('warehouseId');
+        const category = searchParams.get('category');
+        const search = searchParams.get('search');
+        const lowStock = searchParams.get('lowStock') === 'true';
+        const barcode = searchParams.get('barcode');
+
+        // Build where clause
+        const where: any = { active: true };
+
+        if (category) {
+            where.category = category;
+        }
+
+        if (barcode) {
+            where.barcode = barcode;
+        }
+
+        if (search) {
+            where.OR = [
+                { name: { contains: search } },
+                { sku: { contains: search } },
+                { barcode: { contains: search } },
+            ];
+        }
+
         const items = await prisma.itemMaster.findMany({
-            where: { active: true },
+            where,
+            include: {
+                inventoryItems: {
+                    where: warehouseId ? { warehouseId } : undefined,
+                    include: {
+                        warehouse: { select: { id: true, name: true, code: true } },
+                        bin: { select: { id: true, code: true, name: true } },
+                    },
+                },
+            },
             orderBy: { name: 'asc' },
         });
 
-        return successResponse({ items });
+        // Calculate stock levels
+        const itemsWithStock = items.map((item) => {
+            const totalStock = item.inventoryItems.reduce((sum, inv) => sum + inv.quantity, 0);
+            const availableStock = item.inventoryItems.reduce((sum, inv) => sum + inv.availableQty, 0);
+            const reservedStock = item.inventoryItems.reduce((sum, inv) => sum + inv.reservedQty, 0);
+            
+            return {
+                ...item,
+                totalStock,
+                availableStock,
+                reservedStock,
+                isLowStock: totalStock <= item.reorderPoint,
+                stockStatus: totalStock === 0 ? 'OUT_OF_STOCK' 
+                    : totalStock <= item.reorderPoint ? 'LOW_STOCK'
+                    : totalStock >= (item.maxStockLevel || Infinity) ? 'OVERSTOCK'
+                    : 'IN_STOCK',
+            };
+        });
+
+        // Filter by low stock if requested
+        const filteredItems = lowStock
+            ? itemsWithStock.filter((item) => item.isLowStock)
+            : itemsWithStock;
+
+        return successResponse({ items: filteredItems });
     } catch (error) {
         console.error('GET items error:', error);
         return errorResponse('Internal server error', 500);
@@ -39,13 +98,22 @@ export async function POST(request: NextRequest) {
 
         const {
             sku,
+            barcode,
             name,
             description,
             category,
             unitOfMeasure,
             weight,
+            dimensions,
             unitCost,
             sellingPrice,
+            minStockLevel,
+            maxStockLevel,
+            reorderPoint,
+            reorderQty,
+            manufacturer,
+            supplier,
+            imageUrl,
         } = await request.json();
 
         if (!sku || !name || !category) {
@@ -61,18 +129,36 @@ export async function POST(request: NextRequest) {
             return errorResponse('SKU already exists', 409);
         }
 
+        // Check if barcode already exists
+        if (barcode) {
+            const existingBarcode = await prisma.itemMaster.findUnique({
+                where: { barcode },
+            });
+
+            if (existingBarcode) {
+                return errorResponse('Barcode already exists', 409);
+            }
+        }
+
         const newItem = await prisma.itemMaster.create({
             data: {
                 sku,
+                barcode,
                 name,
                 description,
                 category,
                 unitOfMeasure: unitOfMeasure || 'PCS',
-                weight: weight ? parseFloat(weight) : undefined,
+                weight: weight ? parseFloat(weight) : null,
+                dimensions,
                 unitCost: parseFloat(unitCost) || 0,
-                sellingPrice: sellingPrice
-                    ? parseFloat(sellingPrice)
-                    : undefined,
+                sellingPrice: sellingPrice ? parseFloat(sellingPrice) : null,
+                minStockLevel: parseInt(minStockLevel) || 0,
+                maxStockLevel: maxStockLevel ? parseInt(maxStockLevel) : null,
+                reorderPoint: parseInt(reorderPoint) || 0,
+                reorderQty: parseInt(reorderQty) || 0,
+                manufacturer,
+                supplier,
+                imageUrl,
             },
         });
 

@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 // User & Authentication Models
@@ -109,6 +110,7 @@ model Bin {
 model ItemMaster {
   id            String   @id @default(cuid())
   sku           String   @unique
+  barcode       String?  @unique // For barcode scanning
   name          String
   description   String?
   category      String
@@ -116,11 +118,22 @@ model ItemMaster {
   // Physical Properties
   unitOfMeasure String   @default("PCS")
   weight        Float?
-  dimensions    String?
+  dimensions    String?  // JSON: {length, width, height}
   
-  // Cost
+  // Cost & Pricing
   unitCost      Float    @default(0)
   sellingPrice  Float?
+  
+  // Stock Control
+  minStockLevel Int      @default(0)
+  maxStockLevel Int?
+  reorderPoint  Int      @default(0)
+  reorderQty    Int      @default(0)
+  
+  // Additional Info
+  manufacturer  String?
+  supplier      String?
+  imageUrl      String?
   
   // Status
   active        Boolean  @default(true)
@@ -133,6 +146,7 @@ model ItemMaster {
   inventoryItems InventoryItem[]
   
   @@index([sku])
+  @@index([barcode])
   @@index([category])
   @@index([active])
 }
@@ -140,10 +154,18 @@ model ItemMaster {
 model InventoryItem {
   id            String   @id @default(cuid())
   quantity      Int      @default(0)
+  reservedQty   Int      @default(0) // Reserved for orders
+  availableQty  Int      @default(0) // quantity - reservedQty
+  
+  // Batch & Expiry
+  batchNumber   String?
+  expiryDate    DateTime?
+  manufacturingDate DateTime?
   
   // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  lastCountDate DateTime? // For cycle counting
   
   // Relations
   itemMaster    ItemMaster @relation(fields: [itemMasterId], references: [id], onDelete: Cascade)
@@ -161,6 +183,8 @@ model InventoryItem {
   @@index([itemMasterId])
   @@index([warehouseId])
   @@index([binId])
+  @@index([batchNumber])
+  @@index([expiryDate])
 }
 
 // Movement & Transaction Models
