@@ -45,6 +45,7 @@ model Warehouse {
   items       InventoryItem[]
   movements   Movement[]
   reports     StockReport[]
+  alerts      StockAlert[]
   manager     User?           @relation("WarehouseManager", fields: [managerId], references: [id])
 
   @@index([code])
@@ -111,6 +112,7 @@ model ItemMaster {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   inventoryItems InventoryItem[]
+  alerts         StockAlert[]
   category       Category?       @relation(fields: [categoryId], references: [id])
 
   @@index([sku])
@@ -120,23 +122,24 @@ model ItemMaster {
 }
 
 model InventoryItem {
-  id                String     @id @default(cuid())
-  quantity          Int        @default(0)
-  reservedQty       Int        @default(0)
-  availableQty      Int        @default(0)
+  id                String        @id @default(cuid())
+  quantity          Int           @default(0)
+  reservedQty       Int           @default(0)
+  availableQty      Int           @default(0)
   batchNumber       String?
   expiryDate        DateTime?
   manufacturingDate DateTime?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   lastCountDate     DateTime?
   itemMasterId      String
   warehouseId       String
   binId             String?
-  bin               Bin?       @relation(fields: [binId], references: [id])
-  warehouse         Warehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  itemMaster        ItemMaster @relation(fields: [itemMasterId], references: [id], onDelete: Cascade)
+  bin               Bin?          @relation(fields: [binId], references: [id])
+  warehouse         Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  itemMaster        ItemMaster    @relation(fields: [itemMasterId], references: [id], onDelete: Cascade)
   movements         Movement[]
+  reservations      Reservation[]
 
   @@unique([itemMasterId, warehouseId, binId])
   @@index([itemMasterId])
@@ -204,4 +207,35 @@ model Activity {
   @@index([action])
   @@index([entity])
   @@index([createdAt])
+}
+
+model StockAlert {
+  id            String    @id @default(cuid())
+  alertType     String    // LOW_STOCK, OUT_OF_STOCK, OVERSTOCK, REORDER_POINT
+  severity      String    // LOW, MEDIUM, HIGH, CRITICAL
+  message       String
+  itemMasterId  String
+  warehouseId   String
+  currentQty    Int
+  threshold     Int
+  acknowledged  Boolean   @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  emailSent     Boolean   @default(false)
+  emailSentAt   DateTime?
+  resolved      Boolean   @default(false)
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  itemMaster    ItemMaster @relation(fields: [itemMasterId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@index([alertType])
+  @@index([severity])
+  @@index([acknowledged])
+  @@index([resolved])
+  @@index([createdAt])
+  @@index([itemMasterId])
+  @@index([warehouseId])
 }
