@@ -87,7 +87,7 @@ export default function MovementsPage() {
 
     const fetchMovements = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('accessToken');
             const params = new URLSearchParams();
             if (filters.type) params.append('type', filters.type);
             if (filters.status) params.append('status', filters.status);
@@ -103,13 +103,39 @@ export default function MovementsPage() {
                 },
             });
 
-            if (!response.ok) throw new Error('Failed to fetch movements');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                    errorData.error ||
+                        `Failed to fetch movements: ${response.status}`
+                );
+            }
 
             const data = await response.json();
             setMovements(data.movements || []);
-            setStats(data.stats || null);
+            setStats(
+                data.stats || {
+                    totalMovements: 0,
+                    inbound: 0,
+                    outbound: 0,
+                    adjustments: 0,
+                    transfers: 0,
+                    totalQuantityIn: 0,
+                    totalQuantityOut: 0,
+                }
+            );
         } catch (error) {
-            console.error('Error fetching movements:', error);
+            console.error('[API] Error fetching movements:', error);
+            setMovements([]);
+            setStats({
+                totalMovements: 0,
+                inbound: 0,
+                outbound: 0,
+                adjustments: 0,
+                transfers: 0,
+                totalQuantityIn: 0,
+                totalQuantityOut: 0,
+            });
         } finally {
             setLoading(false);
         }
@@ -117,7 +143,7 @@ export default function MovementsPage() {
 
     const fetchFormData = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('accessToken');
 
             // Fetch items
             const itemsRes = await fetch('/api/items', {
@@ -151,7 +177,7 @@ export default function MovementsPage() {
                 }
             }
         } catch (error) {
-            console.error('Error fetching form data:', error);
+            console.error('[API] Error fetching form data:', error);
         }
     };
 
@@ -160,7 +186,7 @@ export default function MovementsPage() {
         setCreating(true);
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('accessToken');
             const response = await fetch('/api/movements', {
                 method: 'POST',
                 headers: {
@@ -179,8 +205,11 @@ export default function MovementsPage() {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to create movement');
+                const error = await response.json().catch(() => ({}));
+                throw new Error(
+                    error.error ||
+                        `Failed to create movement: ${response.status}`
+                );
             }
 
             const result = await response.json();
@@ -203,7 +232,12 @@ export default function MovementsPage() {
             // Refresh movements list
             fetchMovements();
         } catch (error: any) {
-            alert(`Error: ${error.message}`);
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Error creating movement';
+            alert(`Error: ${errorMessage}`);
+            console.error('[API] Error creating movement:', error);
         } finally {
             setCreating(false);
         }
@@ -332,7 +366,7 @@ export default function MovementsPage() {
                                     Total Movements
                                 </div>
                                 <div className='text-3xl font-bold text-slate-900 mt-2'>
-                                    {stats.totalMovements}
+                                    {stats?.totalMovements || 0}
                                 </div>
                             </div>
                             <div className='w-14 h-14 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center shadow-lg'>
@@ -359,10 +393,13 @@ export default function MovementsPage() {
                                     Inbound
                                 </div>
                                 <div className='text-3xl font-bold text-green-600 mt-2'>
-                                    {stats.inbound}
+                                    {stats?.inbound || 0}
                                 </div>
                                 <div className='text-xs text-slate-500 mt-1 font-medium'>
-                                    +{stats.totalQuantityIn.toLocaleString()}{' '}
+                                    +
+                                    {(
+                                        stats?.totalQuantityIn || 0
+                                    ).toLocaleString()}{' '}
                                     units
                                 </div>
                             </div>
@@ -390,10 +427,13 @@ export default function MovementsPage() {
                                     Outbound
                                 </div>
                                 <div className='text-3xl font-bold text-red-600 mt-2'>
-                                    {stats.outbound}
+                                    {stats?.outbound || 0}
                                 </div>
                                 <div className='text-xs text-slate-500 mt-1 font-medium'>
-                                    -{stats.totalQuantityOut.toLocaleString()}{' '}
+                                    -
+                                    {(
+                                        stats?.totalQuantityOut || 0
+                                    ).toLocaleString()}{' '}
                                     units
                                 </div>
                             </div>
@@ -421,10 +461,10 @@ export default function MovementsPage() {
                                     Transfers
                                 </div>
                                 <div className='text-3xl font-bold text-blue-600 mt-2'>
-                                    {stats.transfers}
+                                    {stats?.transfers || 0}
                                 </div>
                                 <div className='text-xs text-slate-500 mt-1 font-medium'>
-                                    {stats.adjustments} adjustments
+                                    {stats?.adjustments || 0} adjustments
                                 </div>
                             </div>
                             <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg'>

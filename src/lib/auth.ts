@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { NextRequest } from 'next/server';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRY = '24h';
@@ -83,4 +84,19 @@ export function hasRole(userRole: string, allowedRoles: string[]): boolean {
  */
 export function isAdmin(userRole: string): boolean {
     return userRole === 'ADMIN';
+}
+
+/**
+ * Verify JWT from NextRequest (for API routes)
+ * Extracts token from Authorization header and verifies it
+ */
+export async function verifyJWT(
+    request: NextRequest
+): Promise<JWTPayload | null> {
+    try {
+        const authHeader = request.headers.get('authorization');
+        return verifyAuthToken(authHeader || undefined);
+    } catch (error) {
+        return null;
+    }
 }

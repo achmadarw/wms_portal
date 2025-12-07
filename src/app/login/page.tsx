@@ -28,16 +28,19 @@ export default function LoginPage() {
 
             if (!response.ok) {
                 setError(data.error || 'Login failed');
+                setLoading(false);
                 return;
             }
 
             localStorage.setItem('accessToken', data.token.accessToken);
             localStorage.setItem('user', JSON.stringify(data.user));
 
+            // Keep loading active during navigation to show smooth transition
+            // NextTopLoader will take over during the actual page transition
             router.push('/dashboard');
+            // Don't set loading to false - let the page unmount naturally
         } catch (err) {
             setError('An error occurred. Please try again.');
-        } finally {
             setLoading(false);
         }
     };
@@ -97,7 +100,7 @@ export default function LoginPage() {
                         <form onSubmit={handleSubmit} className='space-y-5'>
                             {/* Email Input */}
                             <div>
-                                <label className='block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2'>
+                                <label className='text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2'>
                                     <svg
                                         className='w-4 h-4 text-slate-500'
                                         fill='none'
@@ -117,7 +120,8 @@ export default function LoginPage() {
                                     type='email'
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className='w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-slate-900 placeholder:text-slate-400'
+                                    disabled={loading}
+                                    className='w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed'
                                     placeholder='you@company.com'
                                     required
                                 />
@@ -126,7 +130,7 @@ export default function LoginPage() {
                             {/* Password Input */}
                             <div>
                                 <div className='flex items-center justify-between mb-2'>
-                                    <label className='block text-sm font-semibold text-slate-700 flex items-center gap-2'>
+                                    <label className='text-sm font-semibold text-slate-700 flex items-center gap-2'>
                                         <svg
                                             className='w-4 h-4 text-slate-500'
                                             fill='none'
@@ -158,7 +162,8 @@ export default function LoginPage() {
                                         onChange={(e) =>
                                             setPassword(e.target.value)
                                         }
-                                        className='w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-slate-900 placeholder:text-slate-400'
+                                        disabled={loading}
+                                        className='w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed'
                                         placeholder='Enter your password'
                                         required
                                     />
@@ -167,7 +172,8 @@ export default function LoginPage() {
                                         onClick={() =>
                                             setShowPassword(!showPassword)
                                         }
-                                        className='absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition'
+                                        disabled={loading}
+                                        className='absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed'
                                     >
                                         {showPassword ? (
                                             <svg
@@ -232,49 +238,48 @@ export default function LoginPage() {
                             <button
                                 type='submit'
                                 disabled={loading}
-                                className='w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white py-4 rounded-xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2'
+                                className='w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white py-4 rounded-xl font-bold text-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 relative overflow-hidden'
                             >
-                                {loading ? (
-                                    <>
-                                        <svg
-                                            className='animate-spin h-5 w-5'
-                                            fill='none'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <circle
-                                                className='opacity-25'
-                                                cx='12'
-                                                cy='12'
-                                                r='10'
-                                                stroke='currentColor'
-                                                strokeWidth='4'
-                                            ></circle>
-                                            <path
-                                                className='opacity-75'
-                                                fill='currentColor'
-                                                d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                                            ></path>
-                                        </svg>
-                                        Signing in...
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg
-                                            className='w-5 h-5'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1'
-                                            />
-                                        </svg>
-                                        Sign In to Dashboard
-                                    </>
+                                {loading && (
+                                    <div className='absolute inset-0 bg-gradient-to-r from-primary-700 to-primary-800 flex items-center justify-center'>
+                                        <div className='flex items-center gap-2'>
+                                            <svg
+                                                className='animate-spin h-5 w-5'
+                                                fill='none'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <circle
+                                                    className='opacity-25'
+                                                    cx='12'
+                                                    cy='12'
+                                                    r='10'
+                                                    stroke='currentColor'
+                                                    strokeWidth='4'
+                                                ></circle>
+                                                <path
+                                                    className='opacity-75'
+                                                    fill='currentColor'
+                                                    d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                                ></path>
+                                            </svg>
+                                            <span>Signing in...</span>
+                                        </div>
+                                    </div>
                                 )}
+                                <svg
+                                    className='w-5 h-5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1'
+                                    />
+                                </svg>
+                                Sign In to Dashboard
                             </button>
                         </form>
 

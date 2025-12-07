@@ -91,20 +91,51 @@ export default function ReservationsPage() {
     const fetchReservations = async () => {
         try {
             setLoading(true);
+            const token = localStorage.getItem('accessToken');
             const params = new URLSearchParams();
             if (statusFilter) params.append('status', statusFilter);
             if (typeFilter) params.append('reservationType', typeFilter);
 
             const response = await fetch(
-                `/api/reservations?${params.toString()}`
+                `/api/reservations?${params.toString()}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
-            if (!response.ok) throw new Error('Failed to fetch');
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                    errorData.error ||
+                        `Failed to fetch reservations: ${response.status}`
+                );
+            }
 
             const data = await response.json();
-            setReservations(data.reservations);
-            setSummary(data.summary);
+            setReservations(data.reservations || []);
+            setSummary(
+                data.summary || {
+                    total: 0,
+                    active: 0,
+                    fulfilled: 0,
+                    released: 0,
+                    expired: 0,
+                    totalReservedQty: 0,
+                }
+            );
         } catch (error) {
-            console.error('Error fetching reservations:', error);
+            console.error('[API] Error fetching reservations:', error);
+            setReservations([]);
+            setSummary({
+                total: 0,
+                active: 0,
+                fulfilled: 0,
+                released: 0,
+                expired: 0,
+                totalReservedQty: 0,
+            });
         } finally {
             setLoading(false);
         }
@@ -126,24 +157,37 @@ export default function ReservationsPage() {
 
         try {
             setProcessing(true);
+            const token = localStorage.getItem('accessToken');
             const response = await fetch('/api/reservations', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
                 body: JSON.stringify({
                     action: 'release',
                     reservationIds: selectedReservations,
                 }),
             });
 
-            if (!response.ok) throw new Error('Failed to release');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                    errorData.error || 'Failed to release reservations'
+                );
+            }
 
             const data = await response.json();
-            alert(data.message);
+            alert(data.message || 'Reservations released successfully');
             setSelectedReservations([]);
             fetchReservations();
         } catch (error) {
-            alert('Error releasing reservations');
-            console.error(error);
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Error releasing reservations';
+            alert(errorMessage);
+            console.error('[API] Error releasing reservations:', error);
         } finally {
             setProcessing(false);
         }
@@ -156,18 +200,33 @@ export default function ReservationsPage() {
 
         try {
             setProcessing(true);
+            const token = localStorage.getItem('accessToken');
             const response = await fetch('/api/reservations/expire', {
                 method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             });
 
-            if (!response.ok) throw new Error('Failed to expire');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                    errorData.error || 'Failed to expire reservations'
+                );
+            }
 
             const data = await response.json();
-            alert(`Expired ${data.expiredCount} reservation(s)`);
+            alert(
+                `Expired ${data.expiredCount || 0} reservation(s) successfully`
+            );
             fetchReservations();
         } catch (error) {
-            alert('Error expiring reservations');
-            console.error(error);
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Error expiring reservations';
+            alert(errorMessage);
+            console.error('[API] Error expiring reservations:', error);
         } finally {
             setProcessing(false);
         }
@@ -253,8 +312,27 @@ export default function ReservationsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+            <div className='space-y-6'>
+                <div className='animate-pulse'>
+                    {/* Header Skeleton */}
+                    <div className='bg-gray-200 rounded-2xl h-40 mb-6'></div>
+
+                    {/* Stats Cards Skeleton */}
+                    <div className='grid grid-cols-1 md:grid-cols-6 gap-6 mb-6'>
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div
+                                key={i}
+                                className='bg-gray-200 rounded-2xl h-32'
+                            ></div>
+                        ))}
+                    </div>
+
+                    {/* Filters Skeleton */}
+                    <div className='bg-gray-200 rounded-2xl h-48 mb-6'></div>
+
+                    {/* Table Skeleton */}
+                    <div className='bg-gray-200 rounded-2xl h-96'></div>
+                </div>
             </div>
         );
     }

@@ -130,12 +130,16 @@ export default function WarehouseLayoutPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-center'>
-                    <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto'></div>
-                    <p className='mt-4 text-slate-600'>
-                        Loading warehouse layout...
-                    </p>
+            <div className='space-y-6'>
+                <div className='animate-pulse'>
+                    {/* Header Skeleton */}
+                    <div className='bg-gray-200 rounded-2xl h-40 mb-6'></div>
+
+                    {/* Controls Skeleton */}
+                    <div className='bg-gray-200 rounded-2xl h-24 mb-6'></div>
+
+                    {/* Layout Grid Skeleton */}
+                    <div className='bg-gray-200 rounded-2xl h-[600px]'></div>
                 </div>
             </div>
         );
