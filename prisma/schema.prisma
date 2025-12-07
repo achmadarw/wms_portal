@@ -8,21 +8,23 @@ datasource db {
 }
 
 model User {
-  id               String     @id @default(cuid())
-  email            String     @unique
-  username         String     @unique
-  password         String
-  fullName         String
-  role             String     @default("OPERATOR")
-  avatar           String?
-  phone            String?
-  active           Boolean    @default(true)
-  lastLogin        DateTime?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  activities       Activity[]
-  movements        Movement[] @relation("CreatedBy")
-  managedWarehouse Warehouse? @relation("WarehouseManager")
+  id                      String        @id @default(cuid())
+  email                   String        @unique
+  username                String        @unique
+  password                String
+  fullName                String
+  role                    String        @default("OPERATOR")
+  avatar                  String?
+  phone                   String?
+  active                  Boolean       @default(true)
+  lastLogin               DateTime?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  activities              Activity[]
+  movements               Movement[]    @relation("CreatedBy")
+  managedWarehouse        Warehouse?    @relation("WarehouseManager")
+  reservationsCreated     Reservation[] @relation("ReservationCreatedBy")
+  reservationsReleased    Reservation[] @relation("ReservationReleasedBy")
 
   @@index([email])
 }
@@ -238,4 +240,33 @@ model StockAlert {
   @@index([createdAt])
   @@index([itemMasterId])
   @@index([warehouseId])
+}
+
+model Reservation {
+  id              String        @id @default(cuid())
+  reservationType String        // ORDER, TRANSFER, PRODUCTION, MANUAL
+  referenceNo     String        // Order number, Transfer ID, etc.
+  quantity        Int
+  status          String        @default("ACTIVE") // ACTIVE, RELEASED, EXPIRED, FULFILLED
+  notes           String?
+  expiresAt       DateTime?     // Auto-release if expired
+  releasedAt      DateTime?
+  fulfilledAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  inventoryItemId String
+  createdById     String
+  releasedById    String?
+  
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  createdBy       User          @relation("ReservationCreatedBy", fields: [createdById], references: [id])
+  releasedBy      User?         @relation("ReservationReleasedBy", fields: [releasedById], references: [id])
+
+  @@index([status])
+  @@index([reservationType])
+  @@index([referenceNo])
+  @@index([inventoryItemId])
+  @@index([createdById])
+  @@index([expiresAt])
+  @@index([createdAt])
 }

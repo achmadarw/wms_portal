@@ -53,13 +53,37 @@ export default function MovementsPage() {
     const [filters, setFilters] = useState({
         type: '',
         status: '',
-        startDate: '',
-        endDate: '',
+        warehouseId: '',
+        dateFrom: '',
+        dateTo: '',
+        search: '',
     });
+
+    // Create Movement Modal State
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        itemId: '',
+        type: 'INBOUND',
+        quantity: '',
+        warehouseId: '',
+        fromBin: '',
+        toBin: '',
+        notes: '',
+    });
+    const [items, setItems] = useState<any[]>([]);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [bins, setBins] = useState<any[]>([]);
 
     useEffect(() => {
         fetchMovements();
     }, [filters]);
+
+    useEffect(() => {
+        if (showCreateModal) {
+            fetchFormData();
+        }
+    }, [showCreateModal]);
 
     const fetchMovements = async () => {
         try {
@@ -67,11 +91,13 @@ export default function MovementsPage() {
             const params = new URLSearchParams();
             if (filters.type) params.append('type', filters.type);
             if (filters.status) params.append('status', filters.status);
-            if (filters.startDate)
-                params.append('startDate', filters.startDate);
-            if (filters.endDate) params.append('endDate', filters.endDate);
+            if (filters.warehouseId)
+                params.append('warehouseId', filters.warehouseId);
+            if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+            if (filters.dateTo) params.append('dateTo', filters.dateTo);
+            if (filters.search) params.append('search', filters.search);
 
-            const response = await fetch(`/api/inventory/movements?${params}`, {
+            const response = await fetch(`/api/movements?${params}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -86,6 +112,100 @@ export default function MovementsPage() {
             console.error('Error fetching movements:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchFormData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+
+            // Fetch items
+            const itemsRes = await fetch('/api/items', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (itemsRes.ok) {
+                const itemsData = await itemsRes.json();
+                setItems(itemsData.items || []);
+            }
+
+            // Fetch warehouses
+            const warehousesRes = await fetch('/api/warehouses', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (warehousesRes.ok) {
+                const warehousesData = await warehousesRes.json();
+                setWarehouses(warehousesData.warehouses || []);
+            }
+
+            // Fetch bins if warehouse selected
+            if (createForm.warehouseId) {
+                const binsRes = await fetch(
+                    `/api/bins?warehouseId=${createForm.warehouseId}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+                if (binsRes.ok) {
+                    const binsData = await binsRes.json();
+                    setBins(binsData.bins || []);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching form data:', error);
+        }
+    };
+
+    const handleCreateMovement = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCreating(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/movements', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    itemId: parseInt(createForm.itemId),
+                    type: createForm.type,
+                    quantity: parseInt(createForm.quantity),
+                    warehouseId: parseInt(createForm.warehouseId),
+                    fromBin: createForm.fromBin || undefined,
+                    toBin: createForm.toBin || undefined,
+                    notes: createForm.notes || undefined,
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to create movement');
+            }
+
+            const result = await response.json();
+            alert(
+                `Movement created successfully!\nReference: ${result.movement.referenceNo}`
+            );
+
+            // Reset form and close modal
+            setCreateForm({
+                itemId: '',
+                type: 'INBOUND',
+                quantity: '',
+                warehouseId: '',
+                fromBin: '',
+                toBin: '',
+                notes: '',
+            });
+            setShowCreateModal(false);
+
+            // Refresh movements list
+            fetchMovements();
+        } catch (error: any) {
+            alert(`Error: ${error.message}`);
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -153,63 +273,203 @@ export default function MovementsPage() {
     }
 
     return (
-        <div className='p-6'>
+        <div className='space-y-6'>
             {/* Header */}
-            <div className='flex justify-between items-center mb-6'>
-                <div>
-                    <h1 className='text-3xl font-bold'>Stock Movements</h1>
-                    <p className='text-gray-600 mt-1'>
-                        Track all inventory movements
-                    </p>
+            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white'>
+                <div className='flex justify-between items-center'>
+                    <div>
+                        <div className='flex items-center gap-3 mb-2'>
+                            <svg
+                                className='w-8 h-8'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
+                                />
+                            </svg>
+                            <h1 className='text-3xl font-bold'>
+                                Stock Movements
+                            </h1>
+                        </div>
+                        <p className='text-primary-100 ml-11'>
+                            Track all inventory movements and transactions
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className='flex items-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition font-semibold shadow-lg'
+                    >
+                        <svg
+                            className='w-5 h-5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M12 4v16m8-8H4'
+                            />
+                        </svg>
+                        Create Movement
+                    </button>
                 </div>
             </div>
 
             {/* Stats Cards */}
             {stats && (
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
-                    <div className='bg-white p-6 rounded-lg shadow'>
-                        <div className='text-sm text-gray-600'>
-                            Total Movements
-                        </div>
-                        <div className='text-3xl font-bold mt-2'>
-                            {stats.totalMovements}
+                    <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Total Movements
+                                </div>
+                                <div className='text-3xl font-bold text-slate-900 mt-2'>
+                                    {stats.totalMovements}
+                                </div>
+                            </div>
+                            <div className='w-14 h-14 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center shadow-lg'>
+                                <svg
+                                    className='w-8 h-8 text-white'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+                                    />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                    <div className='bg-white p-6 rounded-lg shadow'>
-                        <div className='text-sm text-gray-600'>Inbound</div>
-                        <div className='text-3xl font-bold mt-2 text-green-600'>
-                            {stats.inbound}
-                        </div>
-                        <div className='text-xs text-gray-500 mt-1'>
-                            +{stats.totalQuantityIn} units
+                    <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Inbound
+                                </div>
+                                <div className='text-3xl font-bold text-green-600 mt-2'>
+                                    {stats.inbound}
+                                </div>
+                                <div className='text-xs text-slate-500 mt-1 font-medium'>
+                                    +{stats.totalQuantityIn.toLocaleString()}{' '}
+                                    units
+                                </div>
+                            </div>
+                            <div className='w-14 h-14 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg'>
+                                <svg
+                                    className='w-8 h-8 text-white'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
+                                    />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                    <div className='bg-white p-6 rounded-lg shadow'>
-                        <div className='text-sm text-gray-600'>Outbound</div>
-                        <div className='text-3xl font-bold mt-2 text-red-600'>
-                            {stats.outbound}
-                        </div>
-                        <div className='text-xs text-gray-500 mt-1'>
-                            -{stats.totalQuantityOut} units
+                    <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Outbound
+                                </div>
+                                <div className='text-3xl font-bold text-red-600 mt-2'>
+                                    {stats.outbound}
+                                </div>
+                                <div className='text-xs text-slate-500 mt-1 font-medium'>
+                                    -{stats.totalQuantityOut.toLocaleString()}{' '}
+                                    units
+                                </div>
+                            </div>
+                            <div className='w-14 h-14 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg'>
+                                <svg
+                                    className='w-8 h-8 text-white'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
+                                    />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                    <div className='bg-white p-6 rounded-lg shadow'>
-                        <div className='text-sm text-gray-600'>Adjustments</div>
-                        <div className='text-3xl font-bold mt-2 text-yellow-600'>
-                            {stats.adjustments}
-                        </div>
-                        <div className='text-xs text-gray-500 mt-1'>
-                            {stats.transfers} transfers
+                    <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Transfers
+                                </div>
+                                <div className='text-3xl font-bold text-blue-600 mt-2'>
+                                    {stats.transfers}
+                                </div>
+                                <div className='text-xs text-slate-500 mt-1 font-medium'>
+                                    {stats.adjustments} adjustments
+                                </div>
+                            </div>
+                            <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg'>
+                                <svg
+                                    className='w-8 h-8 text-white'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
+                                    />
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
             {/* Filters */}
-            <div className='bg-white p-4 rounded-lg shadow mb-6'>
-                <div className='grid grid-cols-1 md:grid-cols-5 gap-4'>
+            <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200'>
+                <div className='flex items-center gap-3 mb-4'>
+                    <svg
+                        className='w-5 h-5 text-primary-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                    >
+                        <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z'
+                        />
+                    </svg>
+                    <span className='font-semibold text-slate-900'>
+                        Filters:
+                    </span>
+                </div>
+                <div className='grid grid-cols-1 md:grid-cols-6 gap-4'>
                     <div>
-                        <label className='block text-sm font-medium text-gray-700 mb-2'>
+                        <label className='block text-sm font-semibold text-slate-700 mb-2'>
                             Movement Type
                         </label>
                         <select
@@ -217,7 +477,7 @@ export default function MovementsPage() {
                             onChange={(e) =>
                                 setFilters({ ...filters, type: e.target.value })
                             }
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            className='w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
                         >
                             <option value=''>All Types</option>
                             <option value='INBOUND'>Inbound</option>
@@ -229,7 +489,7 @@ export default function MovementsPage() {
                         </select>
                     </div>
                     <div>
-                        <label className='block text-sm font-medium text-gray-700 mb-2'>
+                        <label className='block text-sm font-semibold text-slate-700 mb-2'>
                             Status
                         </label>
                         <select
@@ -240,7 +500,7 @@ export default function MovementsPage() {
                                     status: e.target.value,
                                 })
                             }
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            className='w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
                         >
                             <option value=''>All Status</option>
                             <option value='PENDING'>Pending</option>
@@ -250,35 +510,52 @@ export default function MovementsPage() {
                         </select>
                     </div>
                     <div>
-                        <label className='block text-sm font-medium text-gray-700 mb-2'>
-                            Start Date
+                        <label className='block text-sm font-semibold text-slate-700 mb-2'>
+                            From Date
                         </label>
                         <input
                             type='date'
-                            value={filters.startDate}
+                            value={filters.dateFrom}
                             onChange={(e) =>
                                 setFilters({
                                     ...filters,
-                                    startDate: e.target.value,
+                                    dateFrom: e.target.value,
                                 })
                             }
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            className='w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
                         />
                     </div>
                     <div>
-                        <label className='block text-sm font-medium text-gray-700 mb-2'>
-                            End Date
+                        <label className='block text-sm font-semibold text-slate-700 mb-2'>
+                            To Date
                         </label>
                         <input
                             type='date'
-                            value={filters.endDate}
+                            value={filters.dateTo}
                             onChange={(e) =>
                                 setFilters({
                                     ...filters,
-                                    endDate: e.target.value,
+                                    dateTo: e.target.value,
                                 })
                             }
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            className='w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                        />
+                    </div>
+                    <div>
+                        <label className='block text-sm font-semibold text-slate-700 mb-2'>
+                            Search
+                        </label>
+                        <input
+                            type='text'
+                            value={filters.search}
+                            onChange={(e) =>
+                                setFilters({
+                                    ...filters,
+                                    search: e.target.value,
+                                })
+                            }
+                            placeholder='Reference, SKU, Item...'
+                            className='w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
                         />
                     </div>
                     <div className='flex items-end'>
@@ -287,11 +564,13 @@ export default function MovementsPage() {
                                 setFilters({
                                     type: '',
                                     status: '',
-                                    startDate: '',
-                                    endDate: '',
+                                    warehouseId: '',
+                                    dateFrom: '',
+                                    dateTo: '',
+                                    search: '',
                                 })
                             }
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50'
+                            className='w-full px-4 py-2.5 bg-slate-100 border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-200 transition-all font-semibold'
                         >
                             Clear Filters
                         </button>
@@ -300,39 +579,39 @@ export default function MovementsPage() {
             </div>
 
             {/* Movements Table */}
-            <div className='bg-white rounded-lg shadow overflow-hidden'>
+            <div className='bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden'>
                 <div className='overflow-x-auto'>
-                    <table className='w-full'>
-                        <thead className='bg-gray-50'>
+                    <table className='min-w-full divide-y divide-slate-200'>
+                        <thead className='bg-gradient-to-r from-slate-50 to-slate-100'>
                             <tr>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Reference No
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Date & Time
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Item
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Type
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Status
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Quantity
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Warehouse
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Location
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     Notes
                                 </th>
-                                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     By
                                 </th>
                             </tr>
@@ -440,6 +719,482 @@ export default function MovementsPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Create Movement Modal */}
+            {showCreateModal && (
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
+                    <div className='bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col animate-slideUp'>
+                        {/* Modal Header - Fixed */}
+                        <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 flex justify-between items-center flex-shrink-0 rounded-t-2xl'>
+                            <div>
+                                <h2 className='text-2xl font-bold text-white flex items-center gap-3'>
+                                    <svg
+                                        className='w-7 h-7'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
+                                        />
+                                    </svg>
+                                    Create Stock Movement
+                                </h2>
+                                <p className='text-primary-100 text-sm mt-1'>
+                                    Record new inventory transaction
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowCreateModal(false)}
+                                className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
+                                title='Close'
+                            >
+                                <svg
+                                    className='w-6 h-6'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2.5}
+                                        d='M6 18L18 6M6 6l12 12'
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Body - Scrollable */}
+                        <div className='overflow-y-auto flex-1'>
+                            <form
+                                onSubmit={handleCreateMovement}
+                                className='p-8 space-y-6'
+                            >
+                                {/* Movement Type */}
+                                <div className='bg-slate-50 p-5 rounded-xl border border-slate-200'>
+                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                        <svg
+                                            className='w-4 h-4 text-primary-600'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'
+                                            />
+                                        </svg>
+                                        Movement Type *
+                                    </label>
+                                    <select
+                                        value={createForm.type}
+                                        onChange={(e) =>
+                                            setCreateForm({
+                                                ...createForm,
+                                                type: e.target.value,
+                                            })
+                                        }
+                                        required
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                    >
+                                        <option value='INBOUND'>
+                                            📥 Inbound - Receiving goods
+                                        </option>
+                                        <option value='OUTBOUND'>
+                                            📤 Outbound - Shipping goods
+                                        </option>
+                                        <option value='TRANSFER'>
+                                            🔄 Transfer - Move between bins
+                                        </option>
+                                        <option value='ADJUSTMENT'>
+                                            ⚖️ Adjustment - Correct quantity
+                                        </option>
+                                        <option value='RETURN'>
+                                            ↩️ Return - Customer return
+                                        </option>
+                                        <option value='DAMAGE'>
+                                            ⚠️ Damage - Damaged goods
+                                        </option>
+                                    </select>
+                                    <div className='mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                                        <p className='text-xs text-blue-800 font-medium'>
+                                            {createForm.type === 'INBOUND' &&
+                                                '💡 Increases inventory when receiving goods'}
+                                            {createForm.type === 'OUTBOUND' &&
+                                                '💡 Decreases inventory when shipping goods'}
+                                            {createForm.type === 'TRANSFER' &&
+                                                '💡 Moves items between bin locations'}
+                                            {createForm.type === 'ADJUSTMENT' &&
+                                                '💡 Sets absolute quantity (corrections)'}
+                                            {createForm.type === 'RETURN' &&
+                                                '💡 Increases inventory from returns'}
+                                            {createForm.type === 'DAMAGE' &&
+                                                '💡 Decreases inventory for damaged items'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Item Selection */}
+                                <div>
+                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                        <svg
+                                            className='w-4 h-4 text-primary-600'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+                                            />
+                                        </svg>
+                                        Item *
+                                    </label>
+                                    <select
+                                        value={createForm.itemId}
+                                        onChange={(e) =>
+                                            setCreateForm({
+                                                ...createForm,
+                                                itemId: e.target.value,
+                                            })
+                                        }
+                                        required
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                    >
+                                        <option value=''>
+                                            Select an item...
+                                        </option>
+                                        {items.map((item) => (
+                                            <option
+                                                key={item.id}
+                                                value={item.id}
+                                            >
+                                                {item.itemMaster.sku} -{' '}
+                                                {item.itemMaster.name} (Stock:{' '}
+                                                {item.quantity})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Warehouse */}
+                                <div>
+                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                        <svg
+                                            className='w-4 h-4 text-primary-600'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
+                                            />
+                                        </svg>
+                                        Warehouse *
+                                    </label>
+                                    <select
+                                        value={createForm.warehouseId}
+                                        onChange={(e) => {
+                                            setCreateForm({
+                                                ...createForm,
+                                                warehouseId: e.target.value,
+                                            });
+                                            fetchFormData(); // Refresh bins for new warehouse
+                                        }}
+                                        required
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                    >
+                                        <option value=''>
+                                            Select warehouse...
+                                        </option>
+                                        {warehouses.map((wh) => (
+                                            <option key={wh.id} value={wh.id}>
+                                                {wh.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Quantity */}
+                                <div>
+                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                        <svg
+                                            className='w-4 h-4 text-primary-600'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M7 20l4-16m2 16l4-16M6 9h14M4 15h14'
+                                            />
+                                        </svg>
+                                        Quantity *
+                                    </label>
+                                    <input
+                                        type='number'
+                                        value={createForm.quantity}
+                                        onChange={(e) =>
+                                            setCreateForm({
+                                                ...createForm,
+                                                quantity: e.target.value,
+                                            })
+                                        }
+                                        required
+                                        min='1'
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                        placeholder='Enter quantity'
+                                    />
+                                    {createForm.type === 'ADJUSTMENT' && (
+                                        <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                                            <p className='text-xs text-yellow-800 font-medium'>
+                                                ⚠️ For adjustment, this will be
+                                                the NEW absolute quantity
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* From Bin (for OUTBOUND, TRANSFER, DAMAGE) */}
+                                {['OUTBOUND', 'TRANSFER', 'DAMAGE'].includes(
+                                    createForm.type
+                                ) && (
+                                    <div>
+                                        <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                            <svg
+                                                className='w-4 h-4 text-primary-600'
+                                                fill='none'
+                                                stroke='currentColor'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
+                                                />
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
+                                                />
+                                            </svg>
+                                            From Bin{' '}
+                                            {createForm.type === 'TRANSFER'
+                                                ? '*'
+                                                : '(Optional)'}
+                                        </label>
+                                        <select
+                                            value={createForm.fromBin}
+                                            onChange={(e) =>
+                                                setCreateForm({
+                                                    ...createForm,
+                                                    fromBin: e.target.value,
+                                                })
+                                            }
+                                            required={
+                                                createForm.type === 'TRANSFER'
+                                            }
+                                            className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                        >
+                                            <option value=''>
+                                                Select source bin...
+                                            </option>
+                                            {bins.map((bin) => (
+                                                <option
+                                                    key={bin.id}
+                                                    value={bin.location}
+                                                >
+                                                    {bin.location} (Available:{' '}
+                                                    {bin.currentQty}/
+                                                    {bin.capacity})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* To Bin (for INBOUND, TRANSFER, RETURN) */}
+                                {['INBOUND', 'TRANSFER', 'RETURN'].includes(
+                                    createForm.type
+                                ) && (
+                                    <div>
+                                        <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                            <svg
+                                                className='w-4 h-4 text-primary-600'
+                                                fill='none'
+                                                stroke='currentColor'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
+                                                />
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
+                                                />
+                                            </svg>
+                                            To Bin{' '}
+                                            {createForm.type === 'TRANSFER'
+                                                ? '*'
+                                                : '(Optional)'}
+                                        </label>
+                                        <select
+                                            value={createForm.toBin}
+                                            onChange={(e) =>
+                                                setCreateForm({
+                                                    ...createForm,
+                                                    toBin: e.target.value,
+                                                })
+                                            }
+                                            required={
+                                                createForm.type === 'TRANSFER'
+                                            }
+                                            className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                        >
+                                            <option value=''>
+                                                Select destination bin...
+                                            </option>
+                                            {bins.map((bin) => (
+                                                <option
+                                                    key={bin.id}
+                                                    value={bin.location}
+                                                >
+                                                    {bin.location} (Available:{' '}
+                                                    {bin.currentQty}/
+                                                    {bin.capacity})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* Notes */}
+                                <div>
+                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                        <svg
+                                            className='w-4 h-4 text-primary-600'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                                            />
+                                        </svg>
+                                        Notes (Optional)
+                                    </label>
+                                    <textarea
+                                        value={createForm.notes}
+                                        onChange={(e) =>
+                                            setCreateForm({
+                                                ...createForm,
+                                                notes: e.target.value,
+                                            })
+                                        }
+                                        rows={4}
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 resize-none'
+                                        placeholder='Add any additional notes or reference information...'
+                                    />
+                                </div>
+
+                                {/* Form Actions */}
+                                <div className='flex gap-4 pt-6 border-t border-slate-200'>
+                                    <button
+                                        type='submit'
+                                        disabled={creating}
+                                        className='flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-8 py-3.5 rounded-xl hover:from-primary-700 hover:to-primary-800 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed font-bold shadow-lg hover:shadow-xl transition-all'
+                                    >
+                                        {creating ? (
+                                            <>
+                                                <svg
+                                                    className='animate-spin h-5 w-5'
+                                                    fill='none'
+                                                    viewBox='0 0 24 24'
+                                                >
+                                                    <circle
+                                                        className='opacity-25'
+                                                        cx='12'
+                                                        cy='12'
+                                                        r='10'
+                                                        stroke='currentColor'
+                                                        strokeWidth='4'
+                                                    ></circle>
+                                                    <path
+                                                        className='opacity-75'
+                                                        fill='currentColor'
+                                                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                                    ></path>
+                                                </svg>
+                                                Creating Movement...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg
+                                                    className='w-5 h-5'
+                                                    fill='none'
+                                                    stroke='currentColor'
+                                                    viewBox='0 0 24 24'
+                                                >
+                                                    <path
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                        strokeWidth={2}
+                                                        d='M5 13l4 4L19 7'
+                                                    />
+                                                </svg>
+                                                Create Movement
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() =>
+                                            setShowCreateModal(false)
+                                        }
+                                        disabled={creating}
+                                        className='px-8 py-3.5 bg-slate-100 border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all'
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
