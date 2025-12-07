@@ -73,19 +73,33 @@ export default function WarehousesPage() {
             setLoading(true);
             const token = localStorage.getItem('accessToken');
 
+            if (!token) {
+                alert('No authentication token found. Please login again.');
+                router.push('/login');
+                return;
+            }
+
             const response = await fetch('/api/warehouses', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            if (!response.ok) throw new Error('Failed to fetch warehouses');
-
             const data = await response.json();
-            setWarehouses(data.warehouses);
-        } catch (error) {
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to fetch warehouses');
+            }
+
+            if (data.warehouses) {
+                setWarehouses(data.warehouses);
+            } else {
+                console.warn('No warehouses field in response:', data);
+                setWarehouses([]);
+            }
+        } catch (error: any) {
             console.error('Error fetching warehouses:', error);
-            alert('Failed to fetch warehouses');
+            alert(error.message || 'Failed to fetch warehouses');
         } finally {
             setLoading(false);
         }
@@ -648,6 +662,29 @@ export default function WarehousesPage() {
                                                         />
                                                     </svg>
                                                     Bins
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        router.push(
+                                                            `/dashboard/warehouses/${warehouse.id}/layout`
+                                                        )
+                                                    }
+                                                    className='inline-flex items-center gap-1 px-3 py-1.5 text-purple-700 hover:text-white hover:bg-purple-600 border border-purple-300 rounded-lg transition-all font-medium'
+                                                >
+                                                    <svg
+                                                        className='w-4 h-4'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        viewBox='0 0 24 24'
+                                                    >
+                                                        <path
+                                                            strokeLinecap='round'
+                                                            strokeLinejoin='round'
+                                                            strokeWidth={2}
+                                                            d='M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7'
+                                                        />
+                                                    </svg>
+                                                    Layout
                                                 </button>
                                                 <button
                                                     onClick={() =>
