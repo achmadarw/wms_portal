@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Warehouse {
     id: string;
@@ -37,6 +38,7 @@ interface User {
 }
 
 export default function WarehousesPage() {
+    const router = useRouter();
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [supervisors, setSupervisors] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -626,6 +628,29 @@ export default function WarehousesPage() {
                                             <div className='flex items-center gap-2'>
                                                 <button
                                                     onClick={() =>
+                                                        router.push(
+                                                            `/dashboard/warehouses/${warehouse.id}/bins`
+                                                        )
+                                                    }
+                                                    className='inline-flex items-center gap-1 px-3 py-1.5 text-amber-700 hover:text-white hover:bg-amber-600 border border-amber-300 rounded-lg transition-all font-medium'
+                                                >
+                                                    <svg
+                                                        className='w-4 h-4'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        viewBox='0 0 24 24'
+                                                    >
+                                                        <path
+                                                            strokeLinecap='round'
+                                                            strokeLinejoin='round'
+                                                            strokeWidth={2}
+                                                            d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+                                                        />
+                                                    </svg>
+                                                    Bins
+                                                </button>
+                                                <button
+                                                    onClick={() =>
                                                         handleEdit(warehouse)
                                                     }
                                                     className='inline-flex items-center gap-1 px-3 py-1.5 text-primary-700 hover:text-white hover:bg-primary-600 border border-primary-300 rounded-lg transition-all font-medium'
@@ -645,35 +670,6 @@ export default function WarehousesPage() {
                                                     </svg>
                                                     Edit
                                                 </button>
-                                                <button
-                                                    onClick={() =>
-                                                        alert(
-                                                            'View details coming soon'
-                                                        )
-                                                    }
-                                                    className='inline-flex items-center gap-1 px-3 py-1.5 text-slate-700 hover:text-white hover:bg-slate-600 border border-slate-300 rounded-lg transition-all font-medium'
-                                                >
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                                                        />
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                                                        />
-                                                    </svg>
-                                                    View
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -687,11 +683,14 @@ export default function WarehousesPage() {
             {/* Create Warehouse Modal */}
             {showModal && (
                 <div
-                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center p-4 z-[99999] animate-fadeIn'
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
                     style={{
                         position: 'fixed',
                         width: '100vw',
                         height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
                     }}
                 >
                     <div className='bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-slideUp'>

@@ -866,10 +866,20 @@ export default function UsersPage() {
 
             {/* Add User Modal */}
             {showModal && (
-                <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4'>
-                    <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
+                    <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col animate-slideUp'>
                         {/* Modal Header */}
-                        <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 flex justify-between items-center sticky top-0 z-10'>
+                        <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 flex justify-between items-center flex-shrink-0 rounded-t-2xl'>
                             <div>
                                 <h2 className='text-2xl font-bold text-white flex items-center gap-3'>
                                     <svg
@@ -904,7 +914,8 @@ export default function UsersPage() {
                                     });
                                     setFormErrors({});
                                 }}
-                                className='text-white/80 hover:text-white transition'
+                                className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
+                                title='Close'
                             >
                                 <svg
                                     className='w-6 h-6'
@@ -915,260 +926,280 @@ export default function UsersPage() {
                                     <path
                                         strokeLinecap='round'
                                         strokeLinejoin='round'
-                                        strokeWidth={2}
+                                        strokeWidth={2.5}
                                         d='M6 18L18 6M6 6l12 12'
                                     />
                                 </svg>
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className='p-8 space-y-5'>
-                            {/* Full Name */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Full Name{' '}
-                                    <span className='text-red-500'>*</span>
-                                </label>
-                                <input
-                                    type='text'
-                                    name='fullName'
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
-                                        formErrors.fullName
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-primary-500'
-                                    }`}
-                                    placeholder='John Doe'
-                                />
-                                {formErrors.fullName && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.fullName}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Email */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Email{' '}
-                                    <span className='text-red-500'>*</span>
-                                </label>
-                                <input
-                                    type='email'
-                                    name='email'
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
-                                        formErrors.email
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-primary-500'
-                                    }`}
-                                    placeholder='john.doe@example.com'
-                                />
-                                {formErrors.email && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.email}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Password */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Password{' '}
-                                    <span className='text-red-500'>*</span>
-                                </label>
-                                <input
-                                    type='password'
-                                    name='password'
-                                    value={formData.password}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
-                                        formErrors.password
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-primary-500'
-                                    }`}
-                                    placeholder='Minimum 6 characters'
-                                />
-                                {formErrors.password && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.password}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Role */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Role <span className='text-red-500'>*</span>
-                                </label>
-                                <select
-                                    name='role'
-                                    value={formData.role}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
-                                        formErrors.role
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-primary-500'
-                                    }`}
-                                >
-                                    <option value='OPERATOR'>Operator</option>
-                                    <option value='SUPERVISOR'>
-                                        Supervisor
-                                    </option>
-                                    <option value='ADMIN'>Admin</option>
-                                </select>
-                                {formErrors.role && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.role}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Assigned Warehouse */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Assigned Warehouse (Optional)
-                                </label>
-                                <select
-                                    name='warehouseId'
-                                    value={formData.warehouseId}
-                                    onChange={handleInputChange}
-                                    className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
-                                >
-                                    <option value=''>None</option>
-                                    {warehouses.map((warehouse) => (
-                                        <option
-                                            key={warehouse.id}
-                                            value={warehouse.id}
-                                        >
-                                            {warehouse.name} ({warehouse.code})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Phone */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Phone (Optional)
-                                </label>
-                                <input
-                                    type='tel'
-                                    name='phone'
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
-                                    placeholder='+1234567890'
-                                />
-                            </div>
-
-                            {/* Submit Buttons */}
-                            <div className='flex gap-3 pt-4 border-t border-slate-200'>
-                                <button
-                                    type='submit'
-                                    disabled={submitting}
-                                    className='flex-1 px-6 py-3.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
-                                >
-                                    {submitting ? (
-                                        <>
-                                            <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        <>
+                        {/* Modal Body - Scrollable */}
+                        <div className='overflow-y-auto flex-1'>
+                            <form
+                                onSubmit={handleSubmit}
+                                className='p-8 space-y-5'
+                            >
+                                {/* Full Name */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Full Name{' '}
+                                        <span className='text-red-500'>*</span>
+                                    </label>
+                                    <input
+                                        type='text'
+                                        name='fullName'
+                                        value={formData.fullName}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
+                                            formErrors.fullName
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-primary-500'
+                                        }`}
+                                        placeholder='John Doe'
+                                    />
+                                    {formErrors.fullName && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
                                             <svg
-                                                className='w-5 h-5'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
                                             >
                                                 <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M5 13l4 4L19 7'
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
                                                 />
                                             </svg>
-                                            Create User
-                                        </>
+                                            {formErrors.fullName}
+                                        </p>
                                     )}
-                                </button>
-                                <button
-                                    type='button'
-                                    onClick={() => {
-                                        setShowModal(false);
-                                        setFormData({
-                                            fullName: '',
-                                            email: '',
-                                            password: '',
-                                            role: 'OPERATOR',
-                                            warehouseId: '',
-                                            phone: '',
-                                        });
-                                        setFormErrors({});
-                                    }}
-                                    className='px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl transition font-bold'
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
+                                </div>
+
+                                {/* Email */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Email{' '}
+                                        <span className='text-red-500'>*</span>
+                                    </label>
+                                    <input
+                                        type='email'
+                                        name='email'
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
+                                            formErrors.email
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-primary-500'
+                                        }`}
+                                        placeholder='john.doe@example.com'
+                                    />
+                                    {formErrors.email && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
+                                            <svg
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
+                                            >
+                                                <path
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
+                                                />
+                                            </svg>
+                                            {formErrors.email}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Password */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Password{' '}
+                                        <span className='text-red-500'>*</span>
+                                    </label>
+                                    <input
+                                        type='password'
+                                        name='password'
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
+                                            formErrors.password
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-primary-500'
+                                        }`}
+                                        placeholder='Minimum 6 characters'
+                                    />
+                                    {formErrors.password && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
+                                            <svg
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
+                                            >
+                                                <path
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
+                                                />
+                                            </svg>
+                                            {formErrors.password}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Role */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Role{' '}
+                                        <span className='text-red-500'>*</span>
+                                    </label>
+                                    <select
+                                        name='role'
+                                        value={formData.role}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all ${
+                                            formErrors.role
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-primary-500'
+                                        }`}
+                                    >
+                                        <option value='OPERATOR'>
+                                            Operator
+                                        </option>
+                                        <option value='SUPERVISOR'>
+                                            Supervisor
+                                        </option>
+                                        <option value='ADMIN'>Admin</option>
+                                    </select>
+                                    {formErrors.role && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
+                                            <svg
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
+                                            >
+                                                <path
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
+                                                />
+                                            </svg>
+                                            {formErrors.role}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Assigned Warehouse */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Assigned Warehouse (Optional)
+                                    </label>
+                                    <select
+                                        name='warehouseId'
+                                        value={formData.warehouseId}
+                                        onChange={handleInputChange}
+                                        className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
+                                    >
+                                        <option value=''>None</option>
+                                        {warehouses.map((warehouse) => (
+                                            <option
+                                                key={warehouse.id}
+                                                value={warehouse.id}
+                                            >
+                                                {warehouse.name} (
+                                                {warehouse.code})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Phone */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Phone (Optional)
+                                    </label>
+                                    <input
+                                        type='tel'
+                                        name='phone'
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
+                                        placeholder='+1234567890'
+                                    />
+                                </div>
+
+                                {/* Submit Buttons */}
+                                <div className='flex gap-3 pt-4 border-t border-slate-200'>
+                                    <button
+                                        type='submit'
+                                        disabled={submitting}
+                                        className='flex-1 px-6 py-3.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                                                Creating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg
+                                                    className='w-5 h-5'
+                                                    fill='none'
+                                                    stroke='currentColor'
+                                                    viewBox='0 0 24 24'
+                                                >
+                                                    <path
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                        strokeWidth={2}
+                                                        d='M5 13l4 4L19 7'
+                                                    />
+                                                </svg>
+                                                Create User
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() => {
+                                            setShowModal(false);
+                                            setFormData({
+                                                fullName: '',
+                                                email: '',
+                                                password: '',
+                                                role: 'OPERATOR',
+                                                warehouseId: '',
+                                                phone: '',
+                                            });
+                                            setFormErrors({});
+                                        }}
+                                        className='px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl transition font-bold'
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Edit User Modal */}
             {showEditModal && editingUser && (
-                <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4'>
-                    <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
+                    <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col animate-slideUp'>
                         {/* Modal Header */}
-                        <div className='bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 flex justify-between items-center sticky top-0 z-10'>
+                        <div className='bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 flex justify-between items-center flex-shrink-0 rounded-t-2xl'>
                             <div>
                                 <h2 className='text-2xl font-bold text-white flex items-center gap-3'>
                                     <svg
@@ -1204,7 +1235,8 @@ export default function UsersPage() {
                                     });
                                     setFormErrors({});
                                 }}
-                                className='text-white/80 hover:text-white transition'
+                                className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
+                                title='Close'
                             >
                                 <svg
                                     className='w-6 h-6'
@@ -1215,256 +1247,262 @@ export default function UsersPage() {
                                     <path
                                         strokeLinecap='round'
                                         strokeLinejoin='round'
-                                        strokeWidth={2}
+                                        strokeWidth={2.5}
                                         d='M6 18L18 6M6 6l12 12'
                                     />
                                 </svg>
                             </button>
                         </div>
 
-                        <form
-                            onSubmit={handleUpdateUser}
-                            className='p-8 space-y-5'
-                        >
-                            {/* Full Name */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Full Name *
-                                </label>
-                                <input
-                                    type='text'
-                                    value={formData.fullName}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            fullName: e.target.value,
-                                        }))
-                                    }
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-                                        formErrors.fullName
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-blue-500'
-                                    }`}
-                                    required
-                                />
-                                {formErrors.fullName && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.fullName}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Email */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Email *
-                                </label>
-                                <input
-                                    type='email'
-                                    value={formData.email}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            email: e.target.value,
-                                        }))
-                                    }
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-                                        formErrors.email
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-blue-500'
-                                    }`}
-                                    required
-                                />
-                                {formErrors.email && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.email}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Password */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Password (leave blank to keep current)
-                                </label>
-                                <input
-                                    type='password'
-                                    value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            password: e.target.value,
-                                        }))
-                                    }
-                                    className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-                                        formErrors.password
-                                            ? 'border-red-500 bg-red-50'
-                                            : 'border-slate-200 focus:border-blue-500'
-                                    }`}
-                                    placeholder='Enter new password or leave blank'
-                                />
-                                {formErrors.password && (
-                                    <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                        <svg
-                                            className='w-4 h-4'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
-                                        {formErrors.password}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Role */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Role *
-                                </label>
-                                <select
-                                    value={formData.role}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            role: e.target.value,
-                                        }))
-                                    }
-                                    className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-                                    required
-                                >
-                                    <option value='OPERATOR'>Operator</option>
-                                    <option value='SUPERVISOR'>
-                                        Supervisor
-                                    </option>
-                                    <option value='ADMIN'>Admin</option>
-                                </select>
-                            </div>
-
-                            {/* Phone */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Phone Number
-                                </label>
-                                <input
-                                    type='tel'
-                                    value={formData.phone}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            phone: e.target.value,
-                                        }))
-                                    }
-                                    className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-                                    placeholder='+62812345678'
-                                />
-                            </div>
-
-                            {/* Warehouse */}
-                            <div>
-                                <label className='block text-sm font-bold text-slate-700 mb-2'>
-                                    Assigned Warehouse
-                                </label>
-                                <select
-                                    value={formData.warehouseId}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            warehouseId: e.target.value,
-                                        }))
-                                    }
-                                    className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-                                >
-                                    <option value=''>Not assigned</option>
-                                    {warehouses.map((warehouse) => (
-                                        <option
-                                            key={warehouse.id}
-                                            value={warehouse.id}
-                                        >
-                                            {warehouse.code} - {warehouse.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Buttons */}
-                            <div className='flex gap-3 pt-4 border-t border-slate-200'>
-                                <button
-                                    type='submit'
-                                    disabled={submitting}
-                                    className='flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
-                                >
-                                    {submitting ? (
-                                        <>
-                                            <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
-                                            Updating...
-                                        </>
-                                    ) : (
-                                        <>
+                        {/* Modal Body - Scrollable */}
+                        <div className='overflow-y-auto flex-1'>
+                            <form
+                                onSubmit={handleUpdateUser}
+                                className='p-8 space-y-5'
+                            >
+                                {/* Full Name */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Full Name *
+                                    </label>
+                                    <input
+                                        type='text'
+                                        value={formData.fullName}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                fullName: e.target.value,
+                                            }))
+                                        }
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                                            formErrors.fullName
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-blue-500'
+                                        }`}
+                                        required
+                                    />
+                                    {formErrors.fullName && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
                                             <svg
-                                                className='w-5 h-5'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
                                             >
                                                 <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M5 13l4 4L19 7'
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
                                                 />
                                             </svg>
-                                            Update User
-                                        </>
+                                            {formErrors.fullName}
+                                        </p>
                                     )}
-                                </button>
-                                <button
-                                    type='button'
-                                    onClick={() => {
-                                        setShowEditModal(false);
-                                        setEditingUser(null);
-                                        setFormData({
-                                            fullName: '',
-                                            email: '',
-                                            password: '',
-                                            role: 'OPERATOR',
-                                            warehouseId: '',
-                                            phone: '',
-                                        });
-                                        setFormErrors({});
-                                    }}
-                                    className='px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl transition font-bold'
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
+                                </div>
+
+                                {/* Email */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Email *
+                                    </label>
+                                    <input
+                                        type='email'
+                                        value={formData.email}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                email: e.target.value,
+                                            }))
+                                        }
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                                            formErrors.email
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-blue-500'
+                                        }`}
+                                        required
+                                    />
+                                    {formErrors.email && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
+                                            <svg
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
+                                            >
+                                                <path
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
+                                                />
+                                            </svg>
+                                            {formErrors.email}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Password */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Password (leave blank to keep current)
+                                    </label>
+                                    <input
+                                        type='password'
+                                        value={formData.password}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                password: e.target.value,
+                                            }))
+                                        }
+                                        className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                                            formErrors.password
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-slate-200 focus:border-blue-500'
+                                        }`}
+                                        placeholder='Enter new password or leave blank'
+                                    />
+                                    {formErrors.password && (
+                                        <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
+                                            <svg
+                                                className='w-4 h-4'
+                                                fill='currentColor'
+                                                viewBox='0 0 20 20'
+                                            >
+                                                <path
+                                                    fillRule='evenodd'
+                                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                    clipRule='evenodd'
+                                                />
+                                            </svg>
+                                            {formErrors.password}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Role */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Role *
+                                    </label>
+                                    <select
+                                        value={formData.role}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                role: e.target.value,
+                                            }))
+                                        }
+                                        className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
+                                        required
+                                    >
+                                        <option value='OPERATOR'>
+                                            Operator
+                                        </option>
+                                        <option value='SUPERVISOR'>
+                                            Supervisor
+                                        </option>
+                                        <option value='ADMIN'>Admin</option>
+                                    </select>
+                                </div>
+
+                                {/* Phone */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Phone Number
+                                    </label>
+                                    <input
+                                        type='tel'
+                                        value={formData.phone}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                phone: e.target.value,
+                                            }))
+                                        }
+                                        className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
+                                        placeholder='+62812345678'
+                                    />
+                                </div>
+
+                                {/* Warehouse */}
+                                <div>
+                                    <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                        Assigned Warehouse
+                                    </label>
+                                    <select
+                                        value={formData.warehouseId}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                warehouseId: e.target.value,
+                                            }))
+                                        }
+                                        className='w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
+                                    >
+                                        <option value=''>Not assigned</option>
+                                        {warehouses.map((warehouse) => (
+                                            <option
+                                                key={warehouse.id}
+                                                value={warehouse.id}
+                                            >
+                                                {warehouse.code} -{' '}
+                                                {warehouse.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Buttons */}
+                                <div className='flex gap-3 pt-4 border-t border-slate-200'>
+                                    <button
+                                        type='submit'
+                                        disabled={submitting}
+                                        className='flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                                                Updating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg
+                                                    className='w-5 h-5'
+                                                    fill='none'
+                                                    stroke='currentColor'
+                                                    viewBox='0 0 24 24'
+                                                >
+                                                    <path
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                        strokeWidth={2}
+                                                        d='M5 13l4 4L19 7'
+                                                    />
+                                                </svg>
+                                                Update User
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type='button'
+                                        onClick={() => {
+                                            setShowEditModal(false);
+                                            setEditingUser(null);
+                                            setFormData({
+                                                fullName: '',
+                                                email: '',
+                                                password: '',
+                                                role: 'OPERATOR',
+                                                warehouseId: '',
+                                                phone: '',
+                                            });
+                                            setFormErrors({});
+                                        }}
+                                        className='px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl transition font-bold'
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}

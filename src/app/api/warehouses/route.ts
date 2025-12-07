@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
                 state,
                 zipCode,
                 country,
-                warehouseId: managerId,
+                managerId: managerId || null,
             },
         });
 

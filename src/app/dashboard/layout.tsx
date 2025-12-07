@@ -239,7 +239,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Main Content */}
             <main className='ml-64'>
                 {/* Top Bar */}
-                <header className='bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40'>
+                <header className='bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30'>
                     <div className='px-6 py-4 flex justify-between items-center'>
                         <div>
                             <h2 className='text-xl font-bold text-slate-900'>
