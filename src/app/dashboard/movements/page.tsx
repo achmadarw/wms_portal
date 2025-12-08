@@ -303,6 +303,36 @@ export default function MovementsPage() {
         }
     };
 
+    const handleProcessMovement = async (movementId: string) => {
+        if (!confirm('Process this movement? This will update inventory.')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`/api/movements/${movementId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ action: 'process' }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || 'Movement processed successfully!');
+                fetchMovements(); // Refresh list
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to process movement');
+            }
+        } catch (error) {
+            console.error('[API] Error processing movement:', error);
+            alert('Failed to process movement');
+        }
+    };
+
     const getTypeColor = (type: string) => {
         switch (type) {
             case 'INBOUND':
@@ -714,13 +744,16 @@ export default function MovementsPage() {
                                 <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                     By
                                 </th>
+                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className='bg-white divide-y divide-gray-200'>
                             {movements.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={10}
+                                        colSpan={11}
                                         className='px-6 py-12 text-center text-gray-500'
                                     >
                                         No movements found
@@ -811,6 +844,29 @@ export default function MovementsPage() {
                                         </td>
                                         <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                                             {movement.createdBy.fullName}
+                                        </td>
+                                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                                            {movement.status === 'PENDING' ? (
+                                                <button
+                                                    onClick={() =>
+                                                        handleProcessMovement(
+                                                            movement.id
+                                                        )
+                                                    }
+                                                    className='bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors'
+                                                >
+                                                    Process
+                                                </button>
+                                            ) : movement.status ===
+                                              'COMPLETED' ? (
+                                                <span className='text-green-600 text-xs font-medium'>
+                                                    ✓ Completed
+                                                </span>
+                                            ) : (
+                                                <span className='text-gray-400 text-xs'>
+                                                    {movement.status}
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

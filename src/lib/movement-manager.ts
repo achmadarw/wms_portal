@@ -99,173 +99,47 @@ export async function createMovement(
         // Generate reference number
         const referenceNo = generateMovementReferenceNo(type);
 
-        // Create movement and update inventory in transaction
-        const result = await prisma.$transaction(async (tx) => {
-            // Create movement record
-            const movement = await tx.movement.create({
-                data: {
-                    referenceNo,
-                    type,
-                    quantity,
-                    warehouseId,
-                    itemId: inventoryItemId,
-                    fromBin: fromBinId,
-                    toBin: toBinId,
-                    notes,
-                    createdById,
-                    status: 'COMPLETED', // Auto-complete for now
-                },
-                include: {
-                    item: {
-                        include: {
-                            itemMaster: true,
-                            warehouse: true,
-                            bin: true,
-                        },
-                    },
-                    createdBy: {
-                        select: {
-                            id: true,
-                            fullName: true,
-                            email: true,
-                        },
+        // Create movement record with PENDING status
+        // Inventory will be updated when movement is processed (status changed to COMPLETED)
+        const movement = await prisma.movement.create({
+            data: {
+                referenceNo,
+                type,
+                quantity,
+                warehouseId,
+                itemId: inventoryItemId,
+                fromBin: fromBinId,
+                toBin: toBinId,
+                notes,
+                createdById,
+                status: 'PENDING', // Start as PENDING, must be processed to COMPLETED
+            },
+            include: {
+                item: {
+                    include: {
+                        itemMaster: true,
+                        warehouse: true,
+                        bin: true,
                     },
                 },
-            });
-
-            // Update inventory based on movement type
-            switch (type) {
-                case 'INBOUND':
-                    // Increase inventory quantity
-                    await tx.inventoryItem.update({
-                        where: { id: inventoryItemId },
-                        data: {
-                            quantity: {
-                                increment: quantity,
-                            },
-                            availableQty: {
-                                increment: quantity,
-                            },
-                        },
-                    });
-                    break;
-
-                case 'OUTBOUND':
-                    // Decrease inventory quantity
-                    await tx.inventoryItem.update({
-                        where: { id: inventoryItemId },
-                        data: {
-                            quantity: {
-                                decrement: quantity,
-                            },
-                            availableQty: {
-                                decrement: quantity,
-                            },
-                        },
-                    });
-                    break;
-
-                case 'ADJUSTMENT':
-                    // Adjustment can be positive or negative
-                    // For simplicity, treating as absolute set for now
-                    // In production, you'd want to track variance separately
-                    await tx.inventoryItem.update({
-                        where: { id: inventoryItemId },
-                        data: {
-                            quantity,
-                            availableQty: quantity,
-                        },
-                    });
-                    break;
-
-                case 'TRANSFER':
-                    // Transfer doesn't change total quantity, just location
-                    // Update bin if moving between bins
-                    if (toBinId && toBinId !== inventoryItem.binId) {
-                        // Note: This is simplified. In production, you might want to
-                        // split inventory items or create new records for different bins
-                        await tx.inventoryItem.update({
-                            where: { id: inventoryItemId },
-                            data: {
-                                binId: toBinId,
-                            },
-                        });
-                    }
-                    break;
-
-                case 'DAMAGE':
-                    // Damaged goods reduce available inventory
-                    await tx.inventoryItem.update({
-                        where: { id: inventoryItemId },
-                        data: {
-                            quantity: {
-                                decrement: quantity,
-                            },
-                            availableQty: {
-                                decrement: quantity,
-                            },
-                        },
-                    });
-                    break;
-
-                case 'RETURN':
-                    // Customer return increases inventory
-                    await tx.inventoryItem.update({
-                        where: { id: inventoryItemId },
-                        data: {
-                            quantity: {
-                                increment: quantity,
-                            },
-                            availableQty: {
-                                increment: quantity,
-                            },
-                        },
-                    });
-                    break;
-            }
-
-            // Update bin quantities if applicable
-            if (
-                fromBinId &&
-                (type === 'OUTBOUND' ||
-                    type === 'TRANSFER' ||
-                    type === 'DAMAGE')
-            ) {
-                await tx.bin.update({
-                    where: { id: fromBinId },
-                    data: {
-                        currentQty: {
-                            decrement: quantity,
-                        },
+                createdBy: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
                     },
-                });
-            }
-
-            if (
-                toBinId &&
-                (type === 'INBOUND' || type === 'TRANSFER' || type === 'RETURN')
-            ) {
-                await tx.bin.update({
-                    where: { id: toBinId },
-                    data: {
-                        currentQty: {
-                            increment: quantity,
-                        },
-                    },
-                });
-            }
-
-            return movement;
+                },
+            },
         });
 
         console.log(
-            `[MOVEMENT] Created ${type} movement ${result.referenceNo} for ${quantity} units of ${inventoryItem.itemMaster.name}`
+            `[MOVEMENT] Created ${type} movement ${movement.referenceNo} for ${quantity} units of ${inventoryItem.itemMaster.name} with status PENDING`
         );
 
         return {
             success: true,
-            message: `Successfully created ${type} movement`,
-            movement: result,
+            message: `Successfully created ${type} movement. Status: PENDING. Please process to complete.`,
+            movement: movement,
         };
     } catch (error) {
         console.error('[MOVEMENT] Error creating movement:', error);
@@ -426,4 +300,229 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
         valid: errors.length === 0,
         errors,
     };
+}
+
+/**
+ * Process movement from PENDING to COMPLETED
+ * This updates inventory quantities based on movement type
+ */
+export async function processMovement(
+    movementId: string
+): Promise<MovementResult> {
+    try {
+        // Get movement details
+        const movement = await prisma.movement.findUnique({
+            where: { id: movementId },
+            include: {
+                item: {
+                    include: {
+                        itemMaster: true,
+                        warehouse: true,
+                        bin: true,
+                    },
+                },
+            },
+        });
+
+        if (!movement) {
+            return {
+                success: false,
+                message: 'Movement not found',
+                error: 'MOVEMENT_NOT_FOUND',
+            };
+        }
+
+        if (movement.status === 'COMPLETED') {
+            return {
+                success: false,
+                message: 'Movement already completed',
+                error: 'ALREADY_COMPLETED',
+            };
+        }
+
+        if (movement.status === 'CANCELLED') {
+            return {
+                success: false,
+                message: 'Cannot process cancelled movement',
+                error: 'MOVEMENT_CANCELLED',
+            };
+        }
+
+        const inventoryItem = movement.item;
+        const { type, quantity, fromBin, toBin } = movement;
+
+        // Validate stock availability for outbound movements
+        if (type === 'OUTBOUND' || type === 'TRANSFER' || type === 'DAMAGE') {
+            if (inventoryItem.availableQty < quantity) {
+                return {
+                    success: false,
+                    message: `Insufficient available quantity. Available: ${inventoryItem.availableQty}, Required: ${quantity}`,
+                    error: 'INSUFFICIENT_QUANTITY',
+                };
+            }
+        }
+
+        // Process movement in transaction
+        const result = await prisma.$transaction(async (tx) => {
+            // Update movement status
+            const updatedMovement = await tx.movement.update({
+                where: { id: movementId },
+                data: {
+                    status: 'COMPLETED',
+                },
+                include: {
+                    item: {
+                        include: {
+                            itemMaster: true,
+                            warehouse: true,
+                            bin: true,
+                        },
+                    },
+                    createdBy: {
+                        select: {
+                            id: true,
+                            fullName: true,
+                            email: true,
+                        },
+                    },
+                },
+            });
+
+            // Update inventory based on movement type
+            switch (type) {
+                case 'INBOUND':
+                    // Increase inventory quantity
+                    await tx.inventoryItem.update({
+                        where: { id: inventoryItem.id },
+                        data: {
+                            quantity: {
+                                increment: quantity,
+                            },
+                            availableQty: {
+                                increment: quantity,
+                            },
+                        },
+                    });
+                    break;
+
+                case 'OUTBOUND':
+                    // Decrease inventory quantity
+                    await tx.inventoryItem.update({
+                        where: { id: inventoryItem.id },
+                        data: {
+                            quantity: {
+                                decrement: quantity,
+                            },
+                            availableQty: {
+                                decrement: quantity,
+                            },
+                        },
+                    });
+                    break;
+
+                case 'ADJUSTMENT':
+                    // Adjustment sets absolute quantity
+                    await tx.inventoryItem.update({
+                        where: { id: inventoryItem.id },
+                        data: {
+                            quantity,
+                            availableQty: quantity,
+                        },
+                    });
+                    break;
+
+                case 'TRANSFER':
+                    // Transfer doesn't change total quantity, just location
+                    if (toBin && toBin !== inventoryItem.binId) {
+                        await tx.inventoryItem.update({
+                            where: { id: inventoryItem.id },
+                            data: {
+                                binId: toBin,
+                            },
+                        });
+                    }
+                    break;
+
+                case 'DAMAGE':
+                    // Damaged goods reduce inventory
+                    await tx.inventoryItem.update({
+                        where: { id: inventoryItem.id },
+                        data: {
+                            quantity: {
+                                decrement: quantity,
+                            },
+                            availableQty: {
+                                decrement: quantity,
+                            },
+                        },
+                    });
+                    break;
+
+                case 'RETURN':
+                    // Customer return increases inventory
+                    await tx.inventoryItem.update({
+                        where: { id: inventoryItem.id },
+                        data: {
+                            quantity: {
+                                increment: quantity,
+                            },
+                            availableQty: {
+                                increment: quantity,
+                            },
+                        },
+                    });
+                    break;
+            }
+
+            // Update bin quantities if applicable
+            if (
+                fromBin &&
+                (type === 'OUTBOUND' ||
+                    type === 'TRANSFER' ||
+                    type === 'DAMAGE')
+            ) {
+                await tx.bin.update({
+                    where: { id: fromBin },
+                    data: {
+                        currentQty: {
+                            decrement: quantity,
+                        },
+                    },
+                });
+            }
+
+            if (
+                toBin &&
+                (type === 'INBOUND' || type === 'TRANSFER' || type === 'RETURN')
+            ) {
+                await tx.bin.update({
+                    where: { id: toBin },
+                    data: {
+                        currentQty: {
+                            increment: quantity,
+                        },
+                    },
+                });
+            }
+
+            return updatedMovement;
+        });
+
+        console.log(
+            `[MOVEMENT] Processed ${type} movement ${result.referenceNo} - Inventory updated`
+        );
+
+        return {
+            success: true,
+            message: `Successfully processed ${type} movement`,
+            movement: result,
+        };
+    } catch (error) {
+        console.error('[MOVEMENT] Error processing movement:', error);
+        return {
+            success: false,
+            message: 'Failed to process movement',
+            error: error instanceof Error ? error.message : String(error),
+        };
+    }
 }
