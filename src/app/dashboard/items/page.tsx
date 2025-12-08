@@ -815,7 +815,10 @@ export default function ItemsPage() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                    {/* Pricing cells - hide for OPERATOR */}
+                    {(userRole === "ADMIN" || userRole === "SUPERVISOR") && (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             ${item.unitCost.toLocaleString()}
                                         </td>
                                         <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
@@ -823,8 +826,10 @@ export default function ItemsPage() {
                                                 ? `$${item.sellingPrice.toLocaleString()}`
                                                 : '-'}
                                         </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                                            <div className='flex gap-2'>
+                      </>
+                    )}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex gap-2">
                                                 <button
                                                     onClick={() =>
                                                         handleOpenEditModal(
