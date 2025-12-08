@@ -302,6 +302,52 @@ export default function WarehousesPage() {
         }
     };
 
+    const handleDelete = async (warehouse: Warehouse) => {
+        // Confirm delete
+        const confirmMessage = `Are you sure you want to delete warehouse "${warehouse.name}"?\n\nThis will set the warehouse status to inactive. The warehouse data will be preserved but marked as inactive.`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('accessToken');
+
+            const response = await fetch(`/api/warehouses/${warehouse.id}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 403) {
+                    alert(
+                        'Permission denied. Only administrators can delete warehouses.'
+                    );
+                } else if (response.status === 400) {
+                    alert(
+                        data.error ||
+                            'Cannot delete warehouse with existing bins.'
+                    );
+                } else {
+                    alert(data.error || 'Failed to delete warehouse');
+                }
+                return;
+            }
+
+            alert(
+                `Warehouse "${warehouse.name}" has been deactivated successfully.`
+            );
+            await fetchWarehouses();
+        } catch (error: any) {
+            console.error('Error deleting warehouse:', error);
+            alert('Network error. Please check your connection and try again.');
+        }
+    };
+
     return (
         <div className='space-y-6'>
             {/* Header */}
@@ -789,6 +835,32 @@ export default function WarehousesPage() {
                                                     </svg>
                                                     Edit
                                                 </button>
+                                                {warehouse.active && (
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                warehouse
+                                                            )
+                                                        }
+                                                        className='inline-flex items-center gap-1 px-3 py-1.5 text-red-700 hover:text-white hover:bg-red-600 border border-red-300 rounded-lg transition-all font-medium'
+                                                        title='Deactivate warehouse'
+                                                    >
+                                                        <svg
+                                                            className='w-4 h-4'
+                                                            fill='none'
+                                                            stroke='currentColor'
+                                                            viewBox='0 0 24 24'
+                                                        >
+                                                            <path
+                                                                strokeLinecap='round'
+                                                                strokeLinejoin='round'
+                                                                strokeWidth={2}
+                                                                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                                                            />
+                                                        </svg>
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
