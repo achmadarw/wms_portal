@@ -51,8 +51,12 @@ export default function ItemsPage() {
     const [showModal, setShowModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+
+  // RBAC state
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState("");
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -95,6 +99,18 @@ export default function ItemsPage() {
     ];
 
     useEffect(() => {
+    // Load current user from localStorage
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+        setUserRole(user.role || "");
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+
         fetchCategories();
         fetchItems();
     }, []);
@@ -430,6 +446,8 @@ export default function ItemsPage() {
                             Manage your inventory catalog and stock items
                         </p>
                     </div>
+          {/* Only ADMIN and SUPERVISOR can create items */}
+          {(userRole === "ADMIN" || userRole === "SUPERVISOR") && (
                     <button
                         onClick={handleOpenModal}
                         className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition font-bold shadow-xl'
@@ -449,6 +467,7 @@ export default function ItemsPage() {
                         </svg>
                         Add New Item
                     </button>
+          )}
                 </div>
             </div>
 
@@ -659,13 +678,18 @@ export default function ItemsPage() {
                             <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                 Stock
                             </th>
-                            <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+              {/* Pricing columns - hide for OPERATOR */}
+              {(userRole === "ADMIN" || userRole === "SUPERVISOR") && (
+                <>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                                 Unit Cost
                             </th>
                             <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                 Selling Price
                             </th>
-                            <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                </>
+              )}
+              <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -688,8 +712,8 @@ export default function ItemsPage() {
                         ) : items.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={8}
-                                    className='px-6 py-12 text-center text-slate-500'
+                  colSpan={userRole === "OPERATOR" ? 6 : 8}
+                  className="px-6 py-12 text-center text-slate-500"
                                 >
                                     <div className='flex flex-col items-center gap-2'>
                                         <svg
