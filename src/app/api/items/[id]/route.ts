@@ -75,6 +75,7 @@ export async function PUT(
             reorderQty,
             manufacturer,
             supplier,
+            leadTimeDays,
             imageUrl,
         } = await request.json();
 
@@ -122,7 +123,12 @@ export async function PUT(
                 barcode: barcode || existingItem.barcode,
                 name: name || existingItem.name,
                 description: description ?? existingItem.description,
-                categoryId: categoryId ?? existingItem.categoryId,
+                category:
+                    categoryId !== undefined
+                        ? categoryId
+                            ? { connect: { id: categoryId } }
+                            : { disconnect: true }
+                        : undefined,
                 unitOfMeasure: unitOfMeasure || existingItem.unitOfMeasure,
                 weight:
                     weight !== undefined
@@ -155,6 +161,10 @@ export async function PUT(
                         : existingItem.reorderQty,
                 manufacturer: manufacturer ?? existingItem.manufacturer,
                 supplier: supplier ?? existingItem.supplier,
+                leadTimeDays:
+                    leadTimeDays !== undefined
+                        ? parseInt(leadTimeDays)
+                        : existingItem.leadTimeDays,
                 imageUrl: imageUrl ?? existingItem.imageUrl,
             },
         });
@@ -165,7 +175,7 @@ export async function PUT(
                 action: 'UPDATE_ITEM',
                 entity: 'ITEM_MASTER',
                 entityId: updatedItem.id,
-                userId: auth.payload.userId,
+                userId: auth.payload!.userId,
             },
         });
 

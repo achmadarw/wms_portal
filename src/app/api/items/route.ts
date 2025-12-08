@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
             reorderQty,
             manufacturer,
             supplier,
+            leadTimeDays,
             imageUrl,
         } = await request.json();
 
@@ -127,7 +128,9 @@ export async function POST(request: NextRequest) {
                 barcode: barcode || null,
                 name,
                 description: description || null,
-                categoryId: categoryId || null,
+                category: categoryId
+                    ? { connect: { id: categoryId } }
+                    : undefined,
                 unitOfMeasure: unitOfMeasure || 'PCS',
                 weight: weight ? parseFloat(weight) : null,
                 dimensions: dimensions || null,
@@ -139,6 +142,7 @@ export async function POST(request: NextRequest) {
                 reorderQty: reorderQty ? parseInt(reorderQty) : 0,
                 manufacturer: manufacturer || null,
                 supplier: supplier || null,
+                leadTimeDays: leadTimeDays ? parseInt(leadTimeDays) : null,
                 imageUrl: imageUrl || null,
             },
         });
@@ -149,7 +153,7 @@ export async function POST(request: NextRequest) {
                 action: 'CREATE_ITEM',
                 entity: 'ITEM_MASTER',
                 entityId: newItem.id,
-                userId: auth.payload.userId,
+                userId: auth.payload!.userId,
             },
         });
 

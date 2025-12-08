@@ -110,6 +110,7 @@ model ItemMaster {
   reorderQty     Int             @default(0)
   manufacturer   String?
   supplier       String?
+  leadTimeDays   Int?
   imageUrl       String?
   active         Boolean         @default(true)
   createdAt      DateTime        @default(now())

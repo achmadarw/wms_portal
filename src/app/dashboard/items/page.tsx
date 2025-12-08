@@ -26,6 +26,7 @@ interface Item {
     reorderQty: number;
     manufacturer?: string;
     supplier?: string;
+    leadTimeDays?: number;
     imageUrl?: string;
     active: boolean;
     createdAt: string;
@@ -71,6 +72,7 @@ export default function ItemsPage() {
         reorderQty: '0',
         manufacturer: '',
         supplier: '',
+        leadTimeDays: '',
         imageUrl: '',
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -170,6 +172,7 @@ export default function ItemsPage() {
             reorderQty: '0',
             manufacturer: '',
             supplier: '',
+            leadTimeDays: '',
             imageUrl: '',
         });
         setFormErrors({});
@@ -195,6 +198,7 @@ export default function ItemsPage() {
             reorderQty: '0',
             manufacturer: '',
             supplier: '',
+            leadTimeDays: '',
             imageUrl: '',
         });
         setFormErrors({});
@@ -219,6 +223,7 @@ export default function ItemsPage() {
             reorderQty: item.reorderQty.toString(),
             manufacturer: item.manufacturer || '',
             supplier: item.supplier || '',
+            leadTimeDays: item.leadTimeDays?.toString() || '',
             imageUrl: item.imageUrl || '',
         });
         setFormErrors({});
@@ -245,6 +250,7 @@ export default function ItemsPage() {
             reorderQty: '0',
             manufacturer: '',
             supplier: '',
+            leadTimeDays: '',
             imageUrl: '',
         });
         setFormErrors({});
@@ -1021,7 +1027,7 @@ export default function ItemsPage() {
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                    category: e.target.value,
+                                                    categoryId: e.target.value,
                                                 })
                                             }
                                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -1288,6 +1294,26 @@ export default function ItemsPage() {
                                         />
                                     </div>
 
+                                    <div>
+                                        <label className='block text-sm font-medium text-gray-700 mb-2'>
+                                            Lead Time (Days)
+                                        </label>
+                                        <input
+                                            type='number'
+                                            value={formData.leadTimeDays}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    leadTimeDays:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                                            placeholder='e.g., 7'
+                                            min='0'
+                                        />
+                                    </div>
+
                                     <div className='md:col-span-2'>
                                         <label className='block text-sm font-medium text-gray-700 mb-2'>
                                             Image URL
@@ -1498,7 +1524,7 @@ export default function ItemsPage() {
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                    category: e.target.value,
+                                                    categoryId: e.target.value,
                                                 })
                                             }
                                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -1752,6 +1778,26 @@ export default function ItemsPage() {
                                                 })
                                             }
                                             className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className='block text-sm font-medium text-gray-700 mb-2'>
+                                            Lead Time (Days)
+                                        </label>
+                                        <input
+                                            type='number'
+                                            value={formData.leadTimeDays}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    leadTimeDays:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                                            placeholder='e.g., 7'
+                                            min='0'
                                         />
                                     </div>
 
