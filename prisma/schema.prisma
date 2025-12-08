@@ -71,6 +71,7 @@ model Bin {
   items       InventoryItem[]
 
   @@unique([warehouseId, code])
+  @@unique([warehouseId, row, column, level], name: "unique_coordinates")
   @@index([warehouseId])
 }
 

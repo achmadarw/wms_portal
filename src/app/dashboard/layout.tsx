@@ -27,7 +27,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         router.push('/login');
     };
 
-    const isActive = (path: string) => pathname === path;
+    const isActive = (path: string) => {
+        // Exact match for dashboard root
+        if (path === '/dashboard') {
+            return pathname === '/dashboard';
+        }
+        // For other paths, check if current pathname starts with the menu path
+        return pathname.startsWith(path);
+    };
 
     const menuItems = [
         {

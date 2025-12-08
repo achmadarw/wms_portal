@@ -33,6 +33,8 @@ export default function WarehouseBinsPage() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showBulkModal, setShowBulkModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [editingBin, setEditingBin] = useState<Bin | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
@@ -45,7 +47,27 @@ export default function WarehouseBinsPage() {
         maxCapacity: '100',
     });
 
+    const [bulkFormData, setBulkFormData] = useState({
+        prefix: '',
+        startRow: '1',
+        endRow: '1',
+        startColumn: '1',
+        endColumn: '1',
+        startLevel: '1',
+        endLevel: '1',
+        maxCapacity: '100',
+        nameTemplate: '',
+    });
+
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importPreview, setImportPreview] = useState<any[]>([]);
+
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchWarehouse();
@@ -279,6 +301,210 @@ export default function WarehouseBinsPage() {
         }
     };
 
+    const handleBulkCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch('/api/warehouses/bins/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    warehouseId,
+                    prefix: bulkFormData.prefix.trim(),
+                    startRow: parseInt(bulkFormData.startRow),
+                    endRow: parseInt(bulkFormData.endRow),
+                    startColumn: parseInt(bulkFormData.startColumn),
+                    endColumn: parseInt(bulkFormData.endColumn),
+                    startLevel: parseInt(bulkFormData.startLevel),
+                    endLevel: parseInt(bulkFormData.endLevel),
+                    maxCapacity: parseInt(bulkFormData.maxCapacity),
+                    nameTemplate: bulkFormData.nameTemplate.trim() || undefined,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(
+                    data.message || `Successfully created ${data.created} bins!`
+                );
+                setShowBulkModal(false);
+                setBulkFormData({
+                    prefix: '',
+                    startRow: '1',
+                    endRow: '1',
+                    startColumn: '1',
+                    endColumn: '1',
+                    startLevel: '1',
+                    endLevel: '1',
+                    maxCapacity: '100',
+                    nameTemplate: '',
+                });
+                fetchBins();
+            } else {
+                alert(data.error || 'Failed to create bins');
+            }
+        } catch (error) {
+            console.error('Error creating bulk bins:', error);
+            alert('Error creating bulk bins');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImportFile(file);
+
+        // Parse CSV
+        const text = await file.text();
+        const lines = text.split('\n').filter((line) => line.trim());
+
+        if (lines.length < 2) {
+            alert('CSV file must contain header and at least one data row');
+            return;
+        }
+
+        // Parse header
+        const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+
+        // Parse data
+        const preview = lines
+            .slice(1, Math.min(6, lines.length))
+            .map((line) => {
+                const values = line.split(',').map((v) => v.trim());
+                const row: any = {};
+                header.forEach((key, index) => {
+                    row[key] = values[index] || '';
+                });
+                return row;
+            });
+
+        setImportPreview(preview);
+    };
+
+    const handleImport = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!importFile) {
+            alert('Please select a file');
+            return;
+        }
+
+        setSubmitting(true);
+
+        try {
+            const text = await importFile.text();
+            const lines = text.split('\n').filter((line) => line.trim());
+
+            if (lines.length < 2) {
+                alert('CSV file must contain header and at least one data row');
+                return;
+            }
+
+            // Parse header
+            const header = lines[0]
+                .split(',')
+                .map((h) => h.trim().toLowerCase());
+
+            // Parse data
+            const bins = lines.slice(1).map((line) => {
+                const values = line.split(',').map((v) => v.trim());
+                const row: any = {};
+                header.forEach((key, index) => {
+                    row[key] = values[index] || '';
+                });
+                return {
+                    code: row.code || row.bincode || '',
+                    name: row.name || row.binname || '',
+                    row: parseInt(row.row) || 0,
+                    column: parseInt(row.column || row.col) || 0,
+                    level: parseInt(row.level || row.lvl) || 0,
+                    maxCapacity:
+                        parseInt(row.maxcapacity || row.capacity) || 100,
+                };
+            });
+
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch('/api/warehouses/bins/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    warehouseId,
+                    bins,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(
+                    data.message ||
+                        `Successfully imported ${data.created} bins!`
+                );
+                setShowImportModal(false);
+                setImportFile(null);
+                setImportPreview([]);
+                fetchBins();
+            } else {
+                alert(data.error || 'Failed to import bins');
+                if (data.errors) {
+                    console.error('Import errors:', data.errors);
+                }
+            }
+        } catch (error) {
+            console.error('Error importing bins:', error);
+            alert('Error importing bins');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const downloadTemplate = () => {
+        const csv =
+            'code,name,row,column,level,maxCapacity\nA-01-01,Bin A-01-01,1,1,1,100\nA-01-02,Bin A-01-02,1,1,2,100\nA-02-01,Bin A-02-01,1,2,1,100';
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'bins_template.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // Filter bins based on search query
+    const filteredBins = bins.filter((bin) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            bin.code.toLowerCase().includes(query) ||
+            bin.name.toLowerCase().includes(query) ||
+            bin.row.toString().includes(query) ||
+            bin.column.toString().includes(query) ||
+            bin.level.toString().includes(query)
+        );
+    });
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredBins.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedBins = filteredBins.slice(startIndex, endIndex);
+
+    // Reset to first page when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
     const getCapacityColor = (current: number, max: number) => {
         const percentage = (current / max) * 100;
         if (percentage >= 90) return 'text-red-600 bg-red-50';
@@ -374,25 +600,65 @@ export default function WarehouseBinsPage() {
                             </div>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className='bg-white text-amber-700 px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition shadow-lg flex items-center gap-2'
-                    >
-                        <svg
-                            className='w-5 h-5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
+                    <div className='flex gap-3'>
+                        <button
+                            onClick={() => setShowBulkModal(true)}
+                            className='bg-white text-amber-700 px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition shadow-lg flex items-center gap-2'
                         >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M12 4v16m8-8H4'
-                            />
-                        </svg>
-                        Add New Bin
-                    </button>
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+                                />
+                            </svg>
+                            Bulk Create
+                        </button>
+                        <button
+                            onClick={() => setShowImportModal(true)}
+                            className='bg-white text-amber-700 px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition shadow-lg flex items-center gap-2'
+                        >
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'
+                                />
+                            </svg>
+                            Import CSV
+                        </button>
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className='bg-white text-amber-700 px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition shadow-lg flex items-center gap-2'
+                        >
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M12 4v16m8-8H4'
+                                />
+                            </svg>
+                            Add New Bin
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -517,23 +783,67 @@ export default function WarehouseBinsPage() {
             {/* Bins Table */}
             <div className='bg-white rounded-2xl shadow-lg border border-slate-200'>
                 <div className='p-6 border-b border-slate-200'>
-                    <div className='flex items-center gap-3'>
-                        <svg
-                            className='w-6 h-6 text-amber-600'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
-                            />
-                        </svg>
-                        <h2 className='text-xl font-bold text-slate-900'>
-                            Storage Bins List
-                        </h2>
+                    <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-3'>
+                            <svg
+                                className='w-6 h-6 text-amber-600'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+                                />
+                            </svg>
+                            <h2 className='text-xl font-bold text-slate-900'>
+                                Storage Bins List
+                            </h2>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className='flex items-center gap-3'>
+                            <div className='relative'>
+                                <input
+                                    type='text'
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder='Search bins...'
+                                    className='pl-10 pr-4 py-2 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent w-64'
+                                />
+                                <svg
+                                    className='w-5 h-5 text-slate-400 absolute left-3 top-2.5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+                                    />
+                                </svg>
+                            </div>
+                            <select
+                                value={itemsPerPage}
+                                onChange={(e) => {
+                                    setItemsPerPage(Number(e.target.value));
+                                    setCurrentPage(1);
+                                }}
+                                className='px-4 py-2 border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                            >
+                                <option value={5}>5 per page</option>
+                                <option value={10}>10 per page</option>
+                                <option value={20}>20 per page</option>
+                                <option value={50}>50 per page</option>
+                                <option value={100}>100 per page</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -565,7 +875,7 @@ export default function WarehouseBinsPage() {
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-200'>
-                            {bins.length === 0 ? (
+                            {paginatedBins.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={7}
@@ -589,18 +899,21 @@ export default function WarehouseBinsPage() {
                                             </div>
                                             <div>
                                                 <p className='text-lg font-semibold text-slate-900'>
-                                                    No bins found
+                                                    {searchQuery
+                                                        ? 'No bins match your search'
+                                                        : 'No bins found'}
                                                 </p>
                                                 <p className='text-sm text-slate-600 mt-1'>
-                                                    Create your first storage
-                                                    bin to get started
+                                                    {searchQuery
+                                                        ? 'Try different search terms'
+                                                        : 'Create your first storage bin to get started'}
                                                 </p>
                                             </div>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
-                                bins.map((bin) => (
+                                paginatedBins.map((bin) => (
                                     <tr
                                         key={bin.id}
                                         className='hover:bg-gradient-to-r hover:from-amber-50/30 hover:to-transparent transition'
@@ -759,6 +1072,169 @@ export default function WarehouseBinsPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {filteredBins.length > 0 && (
+                    <div className='p-6 border-t border-slate-200 bg-slate-50'>
+                        <div className='flex items-center justify-between'>
+                            {/* Results Info */}
+                            <div className='text-sm text-slate-600'>
+                                Showing{' '}
+                                <span className='font-semibold text-slate-900'>
+                                    {startIndex + 1}
+                                </span>{' '}
+                                to{' '}
+                                <span className='font-semibold text-slate-900'>
+                                    {Math.min(endIndex, filteredBins.length)}
+                                </span>{' '}
+                                of{' '}
+                                <span className='font-semibold text-slate-900'>
+                                    {filteredBins.length}
+                                </span>{' '}
+                                bins
+                            </div>
+
+                            {/* Pagination Buttons */}
+                            <div className='flex items-center gap-2'>
+                                <button
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='First page'
+                                >
+                                    <svg
+                                        className='w-5 h-5'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M11 19l-7-7 7-7m8 14l-7-7 7-7'
+                                        />
+                                    </svg>
+                                </button>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((prev) =>
+                                            Math.max(1, prev - 1)
+                                        )
+                                    }
+                                    disabled={currentPage === 1}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Previous page'
+                                >
+                                    <svg
+                                        className='w-5 h-5'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M15 19l-7-7 7-7'
+                                        />
+                                    </svg>
+                                </button>
+
+                                {/* Page Numbers */}
+                                <div className='flex items-center gap-1'>
+                                    {Array.from(
+                                        { length: totalPages },
+                                        (_, i) => i + 1
+                                    )
+                                        .filter((page) => {
+                                            // Show first page, last page, current page, and pages around current
+                                            return (
+                                                page === 1 ||
+                                                page === totalPages ||
+                                                Math.abs(page - currentPage) <=
+                                                    1
+                                            );
+                                        })
+                                        .map((page, index, array) => (
+                                            <div
+                                                key={page}
+                                                className='flex items-center'
+                                            >
+                                                {/* Show ellipsis if there's a gap */}
+                                                {index > 0 &&
+                                                    array[index - 1] !==
+                                                        page - 1 && (
+                                                        <span className='px-2 text-slate-400'>
+                                                            ...
+                                                        </span>
+                                                    )}
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage(page)
+                                                    }
+                                                    className={`px-4 py-2 rounded-lg font-medium transition ${
+                                                        currentPage === page
+                                                            ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg'
+                                                            : 'border border-slate-300 hover:bg-slate-100 text-slate-700'
+                                                    }`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            </div>
+                                        ))}
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((prev) =>
+                                            Math.min(totalPages, prev + 1)
+                                        )
+                                    }
+                                    disabled={currentPage === totalPages}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Next page'
+                                >
+                                    <svg
+                                        className='w-5 h-5'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M9 5l7 7-7 7'
+                                        />
+                                    </svg>
+                                </button>
+
+                                <button
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Last page'
+                                >
+                                    <svg
+                                        className='w-5 h-5'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M13 5l7 7-7 7M5 5l7 7-7 7'
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Create Bin Modal */}
@@ -1474,6 +1950,633 @@ export default function WarehouseBinsPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Create Modal */}
+            {showBulkModal && (
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
+                    <div className='bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl'>
+                        {/* Modal Header - Sticky */}
+                        <div className='bg-gradient-to-r from-amber-600 to-amber-700 px-8 py-6 rounded-t-2xl flex-shrink-0'>
+                            <div className='flex items-center justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div className='w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center'>
+                                        <svg
+                                            className='w-6 h-6 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 className='text-2xl font-bold text-white'>
+                                            Bulk Create Bins
+                                        </h2>
+                                        <p className='text-amber-100 text-sm'>
+                                            Generate multiple bins with a
+                                            pattern (e.g., A-01-01 to E-05-03)
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowBulkModal(false);
+                                        setBulkFormData({
+                                            prefix: '',
+                                            startRow: '1',
+                                            endRow: '1',
+                                            startColumn: '1',
+                                            endColumn: '1',
+                                            startLevel: '1',
+                                            endLevel: '1',
+                                            maxCapacity: '100',
+                                            nameTemplate: '',
+                                        });
+                                    }}
+                                    className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
+                                    title='Close'
+                                >
+                                    <svg
+                                        className='w-6 h-6'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2.5}
+                                            d='M6 18L18 6M6 6l12 12'
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body - Scrollable */}
+                        <div className='overflow-y-auto flex-1'>
+                            <div className='p-8'>
+                                <form
+                                    onSubmit={handleBulkCreate}
+                                    className='space-y-6'
+                                >
+                                    {/* Prefix */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Code Prefix *
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={bulkFormData.prefix}
+                                            onChange={(e) =>
+                                                setBulkFormData((prev) => ({
+                                                    ...prev,
+                                                    prefix: e.target.value,
+                                                }))
+                                            }
+                                            className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                            placeholder='e.g., WH1- or leave empty'
+                                            required
+                                        />
+                                        <p className='text-xs text-slate-500 mt-1'>
+                                            Pattern: {bulkFormData.prefix}
+                                            A-01-01
+                                        </p>
+                                    </div>
+
+                                    {/* Row Range */}
+                                    <div className='grid grid-cols-2 gap-4'>
+                                        <div>
+                                            <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                                Start Row *
+                                            </label>
+                                            <input
+                                                type='number'
+                                                min='1'
+                                                value={bulkFormData.startRow}
+                                                onChange={(e) =>
+                                                    setBulkFormData((prev) => ({
+                                                        ...prev,
+                                                        startRow:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                                required
+                                            />
+                                            <p className='text-xs text-slate-500 mt-1'>
+                                                1 = A, 2 = B, etc.
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                                End Row *
+                                            </label>
+                                            <input
+                                                type='number'
+                                                min='1'
+                                                value={bulkFormData.endRow}
+                                                onChange={(e) =>
+                                                    setBulkFormData((prev) => ({
+                                                        ...prev,
+                                                        endRow: e.target.value,
+                                                    }))
+                                                }
+                                                className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Column Range */}
+                                    <div className='grid grid-cols-2 gap-4'>
+                                        <div>
+                                            <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                                Start Column *
+                                            </label>
+                                            <input
+                                                type='number'
+                                                min='1'
+                                                value={bulkFormData.startColumn}
+                                                onChange={(e) =>
+                                                    setBulkFormData((prev) => ({
+                                                        ...prev,
+                                                        startColumn:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                                End Column *
+                                            </label>
+                                            <input
+                                                type='number'
+                                                min='1'
+                                                value={bulkFormData.endColumn}
+                                                onChange={(e) =>
+                                                    setBulkFormData((prev) => ({
+                                                        ...prev,
+                                                        endColumn:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Level Range */}
+                                    <div className='grid grid-cols-2 gap-4'>
+                                        <div>
+                                            <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                                Start Level *
+                                            </label>
+                                            <input
+                                                type='number'
+                                                min='1'
+                                                value={bulkFormData.startLevel}
+                                                onChange={(e) =>
+                                                    setBulkFormData((prev) => ({
+                                                        ...prev,
+                                                        startLevel:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                                End Level *
+                                            </label>
+                                            <input
+                                                type='number'
+                                                min='1'
+                                                value={bulkFormData.endLevel}
+                                                onChange={(e) =>
+                                                    setBulkFormData((prev) => ({
+                                                        ...prev,
+                                                        endLevel:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Max Capacity */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Max Capacity (default) *
+                                        </label>
+                                        <input
+                                            type='number'
+                                            min='1'
+                                            value={bulkFormData.maxCapacity}
+                                            onChange={(e) =>
+                                                setBulkFormData((prev) => ({
+                                                    ...prev,
+                                                    maxCapacity: e.target.value,
+                                                }))
+                                            }
+                                            className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent'
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Summary */}
+                                    <div className='bg-amber-50 border-2 border-amber-200 rounded-xl p-4'>
+                                        <h3 className='font-bold text-amber-900 mb-2'>
+                                            Summary
+                                        </h3>
+                                        <p className='text-sm text-amber-800'>
+                                            Total bins to create:{' '}
+                                            <strong>
+                                                {(parseInt(
+                                                    bulkFormData.endRow
+                                                ) -
+                                                    parseInt(
+                                                        bulkFormData.startRow
+                                                    ) +
+                                                    1) *
+                                                    (parseInt(
+                                                        bulkFormData.endColumn
+                                                    ) -
+                                                        parseInt(
+                                                            bulkFormData.startColumn
+                                                        ) +
+                                                        1) *
+                                                    (parseInt(
+                                                        bulkFormData.endLevel
+                                                    ) -
+                                                        parseInt(
+                                                            bulkFormData.startLevel
+                                                        ) +
+                                                        1)}
+                                            </strong>
+                                        </p>
+                                    </div>
+
+                                    {/* Form Actions */}
+                                    <div className='flex justify-end gap-3 pt-6 border-t-2 border-slate-100'>
+                                        <button
+                                            type='button'
+                                            onClick={() => {
+                                                setShowBulkModal(false);
+                                                setBulkFormData({
+                                                    prefix: '',
+                                                    startRow: '1',
+                                                    endRow: '1',
+                                                    startColumn: '1',
+                                                    endColumn: '1',
+                                                    startLevel: '1',
+                                                    endLevel: '1',
+                                                    maxCapacity: '100',
+                                                    nameTemplate: '',
+                                                });
+                                            }}
+                                            className='px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition font-bold'
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type='submit'
+                                            disabled={submitting}
+                                            className='px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-xl hover:from-amber-700 hover:to-amber-800 transition font-bold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+                                        >
+                                            {submitting ? (
+                                                <>
+                                                    <svg
+                                                        className='animate-spin h-5 w-5'
+                                                        fill='none'
+                                                        viewBox='0 0 24 24'
+                                                    >
+                                                        <circle
+                                                            className='opacity-25'
+                                                            cx='12'
+                                                            cy='12'
+                                                            r='10'
+                                                            stroke='currentColor'
+                                                            strokeWidth='4'
+                                                        ></circle>
+                                                        <path
+                                                            className='opacity-75'
+                                                            fill='currentColor'
+                                                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                                        ></path>
+                                                    </svg>
+                                                    Creating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg
+                                                        className='w-5 h-5'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        viewBox='0 0 24 24'
+                                                    >
+                                                        <path
+                                                            strokeLinecap='round'
+                                                            strokeLinejoin='round'
+                                                            strokeWidth={2}
+                                                            d='M5 13l4 4L19 7'
+                                                        />
+                                                    </svg>
+                                                    Create Bins
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Import Modal */}
+            {showImportModal && (
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
+                    <div className='bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl'>
+                        {/* Modal Header - Sticky */}
+                        <div className='bg-gradient-to-r from-amber-600 to-amber-700 px-8 py-6 rounded-t-2xl flex-shrink-0'>
+                            <div className='flex items-center justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div className='w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center'>
+                                        <svg
+                                            className='w-6 h-6 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 className='text-2xl font-bold text-white'>
+                                            Import Bins from CSV
+                                        </h2>
+                                        <p className='text-amber-100 text-sm'>
+                                            Upload a CSV file with bin data
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowImportModal(false);
+                                        setImportFile(null);
+                                        setImportPreview([]);
+                                    }}
+                                    className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
+                                    title='Close'
+                                >
+                                    <svg
+                                        className='w-6 h-6'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2.5}
+                                            d='M6 18L18 6M6 6l12 12'
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body - Scrollable */}
+                        <div className='overflow-y-auto flex-1'>
+                            <div className='p-8'>
+                                <form
+                                    onSubmit={handleImport}
+                                    className='space-y-6'
+                                >
+                                    {/* Template Download */}
+                                    <div className='bg-amber-50 border-2 border-amber-200 rounded-xl p-4'>
+                                        <h3 className='font-bold text-amber-900 mb-2'>
+                                            CSV Template
+                                        </h3>
+                                        <p className='text-sm text-amber-800 mb-3'>
+                                            Required columns: code, name, row,
+                                            column, level, maxCapacity
+                                        </p>
+                                        <button
+                                            type='button'
+                                            onClick={downloadTemplate}
+                                            className='px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-bold flex items-center gap-2'
+                                        >
+                                            <svg
+                                                className='w-5 h-5'
+                                                fill='none'
+                                                stroke='currentColor'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'
+                                                />
+                                            </svg>
+                                            Download Template
+                                        </button>
+                                    </div>
+
+                                    {/* File Upload */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Select CSV File *
+                                        </label>
+                                        <input
+                                            type='file'
+                                            accept='.csv'
+                                            onChange={handleFileChange}
+                                            className='w-full border-2 border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-bold hover:file:bg-amber-100'
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Preview */}
+                                    {importPreview.length > 0 && (
+                                        <div>
+                                            <h3 className='font-bold text-slate-700 mb-2'>
+                                                Preview (first 5 rows)
+                                            </h3>
+                                            <div className='overflow-x-auto border-2 border-slate-200 rounded-xl'>
+                                                <table className='w-full text-sm'>
+                                                    <thead className='bg-slate-100'>
+                                                        <tr>
+                                                            <th className='px-4 py-2 text-left font-bold'>
+                                                                Code
+                                                            </th>
+                                                            <th className='px-4 py-2 text-left font-bold'>
+                                                                Name
+                                                            </th>
+                                                            <th className='px-4 py-2 text-left font-bold'>
+                                                                Row
+                                                            </th>
+                                                            <th className='px-4 py-2 text-left font-bold'>
+                                                                Column
+                                                            </th>
+                                                            <th className='px-4 py-2 text-left font-bold'>
+                                                                Level
+                                                            </th>
+                                                            <th className='px-4 py-2 text-left font-bold'>
+                                                                Capacity
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {importPreview.map(
+                                                            (row, index) => (
+                                                                <tr
+                                                                    key={index}
+                                                                    className='border-t border-slate-200'
+                                                                >
+                                                                    <td className='px-4 py-2'>
+                                                                        {row.code ||
+                                                                            row.bincode}
+                                                                    </td>
+                                                                    <td className='px-4 py-2'>
+                                                                        {row.name ||
+                                                                            row.binname}
+                                                                    </td>
+                                                                    <td className='px-4 py-2'>
+                                                                        {
+                                                                            row.row
+                                                                        }
+                                                                    </td>
+                                                                    <td className='px-4 py-2'>
+                                                                        {row.column ||
+                                                                            row.col}
+                                                                    </td>
+                                                                    <td className='px-4 py-2'>
+                                                                        {row.level ||
+                                                                            row.lvl}
+                                                                    </td>
+                                                                    <td className='px-4 py-2'>
+                                                                        {row.maxcapacity ||
+                                                                            row.capacity ||
+                                                                            100}
+                                                                    </td>
+                                                                </tr>
+                                                            )
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Form Actions */}
+                                    <div className='flex justify-end gap-3 pt-6 border-t-2 border-slate-100'>
+                                        <button
+                                            type='button'
+                                            onClick={() => {
+                                                setShowImportModal(false);
+                                                setImportFile(null);
+                                                setImportPreview([]);
+                                            }}
+                                            className='px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition font-bold'
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type='submit'
+                                            disabled={submitting || !importFile}
+                                            className='px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-xl hover:from-amber-700 hover:to-amber-800 transition font-bold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+                                        >
+                                            {submitting ? (
+                                                <>
+                                                    <svg
+                                                        className='animate-spin h-5 w-5'
+                                                        fill='none'
+                                                        viewBox='0 0 24 24'
+                                                    >
+                                                        <circle
+                                                            className='opacity-25'
+                                                            cx='12'
+                                                            cy='12'
+                                                            r='10'
+                                                            stroke='currentColor'
+                                                            strokeWidth='4'
+                                                        ></circle>
+                                                        <path
+                                                            className='opacity-75'
+                                                            fill='currentColor'
+                                                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                                        ></path>
+                                                    </svg>
+                                                    Importing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg
+                                                        className='w-5 h-5'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        viewBox='0 0 24 24'
+                                                    >
+                                                        <path
+                                                            strokeLinecap='round'
+                                                            strokeLinejoin='round'
+                                                            strokeWidth={2}
+                                                            d='M5 13l4 4L19 7'
+                                                        />
+                                                    </svg>
+                                                    Import Bins
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>

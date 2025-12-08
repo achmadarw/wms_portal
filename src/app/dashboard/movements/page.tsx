@@ -85,6 +85,46 @@ export default function MovementsPage() {
         }
     }, [showCreateModal]);
 
+    // Fetch bins when warehouse changes
+    useEffect(() => {
+        const fetchBins = async () => {
+            if (createForm.warehouseId) {
+                try {
+                    const token = localStorage.getItem('accessToken');
+                    console.log(
+                        '[DEBUG] Fetching bins for warehouse:',
+                        createForm.warehouseId
+                    );
+                    const binsRes = await fetch(
+                        `/api/warehouses/bins?warehouseId=${createForm.warehouseId}`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    if (binsRes.ok) {
+                        const binsData = await binsRes.json();
+                        console.log('[DEBUG] Bins response:', binsData);
+                        console.log(
+                            '[DEBUG] Bins array length:',
+                            binsData.bins?.length
+                        );
+                        setBins(binsData.bins || []);
+                    } else {
+                        console.error(
+                            '[API] Failed to fetch bins:',
+                            binsRes.status
+                        );
+                    }
+                } catch (error) {
+                    console.error('[API] Error fetching bins:', error);
+                }
+            } else {
+                setBins([]);
+            }
+        };
+        fetchBins();
+    }, [createForm.warehouseId]);
+
     const fetchMovements = async () => {
         try {
             const token = localStorage.getItem('accessToken');
@@ -145,15 +185,6 @@ export default function MovementsPage() {
         try {
             const token = localStorage.getItem('accessToken');
 
-            // Fetch items
-            const itemsRes = await fetch('/api/items', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (itemsRes.ok) {
-                const itemsData = await itemsRes.json();
-                setItems(itemsData.items || []);
-            }
-
             // Fetch warehouses
             const warehousesRes = await fetch('/api/warehouses', {
                 headers: { Authorization: `Bearer ${token}` },
@@ -163,10 +194,34 @@ export default function MovementsPage() {
                 setWarehouses(warehousesData.warehouses || []);
             }
 
+            // Fetch all items (ItemMaster) - not inventory items
+            console.log('[DEBUG] Fetching items from ItemMaster');
+            const itemsRes = await fetch('/api/items', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log(
+                '[DEBUG] Items fetch response status:',
+                itemsRes.status
+            );
+            if (itemsRes.ok) {
+                const itemsData = await itemsRes.json();
+                console.log('[DEBUG] Items response:', itemsData);
+                console.log(
+                    '[DEBUG] Items array length:',
+                    itemsData.items?.length
+                );
+                if (itemsData.items && itemsData.items.length > 0) {
+                    console.log('[DEBUG] First item:', itemsData.items[0]);
+                }
+                setItems(itemsData.items || []);
+            } else {
+                console.error('[API] Failed to fetch items:', itemsRes.status);
+            }
+
             // Fetch bins if warehouse selected
             if (createForm.warehouseId) {
                 const binsRes = await fetch(
-                    `/api/bins?warehouseId=${createForm.warehouseId}`,
+                    `/api/warehouses/bins?warehouseId=${createForm.warehouseId}`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -187,21 +242,26 @@ export default function MovementsPage() {
 
         try {
             const token = localStorage.getItem('accessToken');
+
+            const requestBody = {
+                itemId: createForm.itemId,
+                type: createForm.type,
+                quantity: parseInt(createForm.quantity),
+                warehouseId: createForm.warehouseId,
+                fromBin: createForm.fromBin || undefined,
+                toBin: createForm.toBin || undefined,
+                notes: createForm.notes || undefined,
+            };
+
+            console.log('[DEBUG] Creating movement with data:', requestBody);
+
             const response = await fetch('/api/movements', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    itemId: parseInt(createForm.itemId),
-                    type: createForm.type,
-                    quantity: parseInt(createForm.quantity),
-                    warehouseId: parseInt(createForm.warehouseId),
-                    fromBin: createForm.fromBin || undefined,
-                    toBin: createForm.toBin || undefined,
-                    notes: createForm.notes || undefined,
-                }),
+                body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
@@ -927,9 +987,7 @@ export default function MovementsPage() {
                                                 key={item.id}
                                                 value={item.id}
                                             >
-                                                {item.itemMaster.sku} -{' '}
-                                                {item.itemMaster.name} (Stock:{' '}
-                                                {item.quantity})
+                                                {item.sku} - {item.name}
                                             </option>
                                         ))}
                                     </select>
@@ -1067,11 +1125,11 @@ export default function MovementsPage() {
                                             {bins.map((bin) => (
                                                 <option
                                                     key={bin.id}
-                                                    value={bin.location}
+                                                    value={bin.code}
                                                 >
-                                                    {bin.location} (Available:{' '}
-                                                    {bin.currentQty}/
-                                                    {bin.capacity})
+                                                    {bin.code} - {bin.name}{' '}
+                                                    (Available: {bin.currentQty}
+                                                    /{bin.maxCapacity})
                                                 </option>
                                             ))}
                                         </select>
@@ -1127,11 +1185,11 @@ export default function MovementsPage() {
                                             {bins.map((bin) => (
                                                 <option
                                                     key={bin.id}
-                                                    value={bin.location}
+                                                    value={bin.code}
                                                 >
-                                                    {bin.location} (Available:{' '}
-                                                    {bin.currentQty}/
-                                                    {bin.capacity})
+                                                    {bin.code} - {bin.name}{' '}
+                                                    (Available: {bin.currentQty}
+                                                    /{bin.maxCapacity})
                                                 </option>
                                             ))}
                                         </select>

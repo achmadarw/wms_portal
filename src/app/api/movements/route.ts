@@ -149,21 +149,98 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
+        console.log('[DEBUG] Received movement request:', body);
+
         const {
             type,
             inventoryItemId,
+            itemId, // ItemMaster ID (for new items)
             quantity,
             warehouseId,
             fromBinId,
             toBinId,
+            fromBin,
+            toBin,
             notes,
         } = body;
 
+        console.log('[DEBUG] Parsed fields:', {
+            type,
+            inventoryItemId,
+            itemId,
+            quantity,
+            warehouseId,
+            fromBinId,
+            toBinId,
+            fromBin,
+            toBin,
+        });
+
+        // Handle itemId (ItemMaster) - find or create inventory item
+        let finalInventoryItemId = inventoryItemId;
+        let finalFromBinId = fromBinId;
+        let finalToBinId = toBinId;
+
+        // Convert bin codes to IDs if provided
+        if (fromBin && !fromBinId) {
+            const bin = await prisma.bin.findFirst({
+                where: { code: fromBin, warehouseId: warehouseId },
+            });
+            if (bin) finalFromBinId = bin.id;
+        }
+
+        if (toBin && !toBinId) {
+            const bin = await prisma.bin.findFirst({
+                where: { code: toBin, warehouseId: warehouseId },
+            });
+            if (bin) finalToBinId = bin.id;
+        }
+
+        if (!inventoryItemId && itemId) {
+            console.log(
+                '[DEBUG] Finding/creating inventory item for itemId:',
+                itemId
+            );
+
+            // Find or create inventory item based on movement type
+            let inventoryItem = await prisma.inventoryItem.findFirst({
+                where: {
+                    itemMasterId: itemId,
+                    warehouseId: warehouseId,
+                    binId:
+                        type === 'INBOUND'
+                            ? finalToBinId || null
+                            : finalFromBinId || null,
+                },
+            });
+
+            if (!inventoryItem) {
+                console.log('[DEBUG] Creating new inventory item');
+                // Create new inventory item
+                inventoryItem = await prisma.inventoryItem.create({
+                    data: {
+                        itemMasterId: itemId,
+                        warehouseId: warehouseId,
+                        binId:
+                            type === 'INBOUND'
+                                ? finalToBinId || null
+                                : finalFromBinId || null,
+                        quantity: 0,
+                        availableQty: 0,
+                        reservedQty: 0,
+                    },
+                });
+            }
+
+            finalInventoryItemId = inventoryItem.id;
+            console.log('[DEBUG] Using inventory item:', finalInventoryItemId);
+        }
+
         // Validate required fields
-        if (!type || !inventoryItemId || !quantity || !warehouseId) {
+        if (!type || !finalInventoryItemId || !quantity || !warehouseId) {
             return NextResponse.json(
                 {
-                    error: 'Missing required fields: type, inventoryItemId, quantity, warehouseId',
+                    error: 'Missing required fields: type, inventoryItemId (or itemId for INBOUND), quantity, warehouseId',
                 },
                 { status: 400 }
             );
@@ -200,11 +277,11 @@ export async function POST(request: NextRequest) {
         // Validate movement before creation
         const validation = await validateMovement({
             type,
-            inventoryItemId,
+            inventoryItemId: finalInventoryItemId,
             quantity,
             warehouseId,
-            fromBinId,
-            toBinId,
+            fromBinId: finalFromBinId,
+            toBinId: finalToBinId,
             notes,
             createdById: user.userId,
         });
@@ -219,11 +296,11 @@ export async function POST(request: NextRequest) {
         // Create movement
         const result = await createMovement({
             type,
-            inventoryItemId,
+            inventoryItemId: finalInventoryItemId,
             quantity,
             warehouseId,
-            fromBinId,
-            toBinId,
+            fromBinId: finalFromBinId,
+            toBinId: finalToBinId,
             notes,
             createdById: user.userId,
         });

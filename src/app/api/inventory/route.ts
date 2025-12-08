@@ -78,6 +78,14 @@ export async function GET(request: NextRequest) {
             orderBy: [{ updatedAt: 'desc' }],
         });
 
+        console.log('[DEBUG] Total inventory items:', inventoryItems.length);
+        if (inventoryItems.length > 0) {
+            console.log(
+                '[DEBUG] First item:',
+                JSON.stringify(inventoryItems[0], null, 2)
+            );
+        }
+
         // Apply stock status filter (after fetching data)
         let filteredItems = inventoryItems;
         if (stockStatus) {

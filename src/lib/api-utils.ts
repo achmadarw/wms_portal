@@ -35,8 +35,16 @@ export function verifyJWT(request: NextRequest) {
 /**
  * Standard error response
  */
-export function errorResponse(message: string, status: number = 400) {
-    return NextResponse.json({ error: message }, { status });
+export function errorResponse(
+    message: string,
+    status: number = 400,
+    additionalData?: any
+) {
+    const responseData: any = { error: message };
+    if (additionalData) {
+        Object.assign(responseData, additionalData);
+    }
+    return NextResponse.json(responseData, { status });
 }
 
 /**

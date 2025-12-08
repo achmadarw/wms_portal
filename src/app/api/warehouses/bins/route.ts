@@ -59,13 +59,30 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if bin code exists in warehouse
-        const existingBin = await prisma.bin.findFirst({
+        const existingBinByCode = await prisma.bin.findFirst({
             where: { warehouseId, code },
         });
 
-        if (existingBin) {
+        if (existingBinByCode) {
             return errorResponse(
                 'Bin code already exists in this warehouse',
+                409
+            );
+        }
+
+        // Check if bin coordinates already exist in warehouse
+        const existingBinByCoordinates = await prisma.bin.findFirst({
+            where: {
+                warehouseId,
+                row,
+                column,
+                level,
+            },
+        });
+
+        if (existingBinByCoordinates) {
+            return errorResponse(
+                `Bin coordinates already exist at Row ${row}, Column ${column}, Level ${level}`,
                 409
             );
         }
