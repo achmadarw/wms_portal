@@ -16,10 +16,12 @@ model User {
   role                    String        @default("OPERATOR")
   avatar                  String?
   phone                   String?
+  warehouseId             String?       // Warehouse assignment for OPERATOR/SUPERVISOR
   active                  Boolean       @default(true)
   lastLogin               DateTime?
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
+  warehouse               Warehouse?    @relation("WarehouseUsers", fields: [warehouseId], references: [id])
   activities              Activity[]
   movements               Movement[]    @relation("CreatedBy")
   managedWarehouse        Warehouse?    @relation("WarehouseManager")
@@ -27,6 +29,7 @@ model User {
   reservationsReleased    Reservation[] @relation("ReservationReleasedBy")
 
   @@index([email])
+  @@index([warehouseId])
 }
 
 model Warehouse {
@@ -48,6 +51,7 @@ model Warehouse {
   movements   Movement[]
   reports     StockReport[]
   alerts      StockAlert[]
+  users       User[]          @relation("WarehouseUsers")
   manager     User?           @relation("WarehouseManager", fields: [managerId], references: [id])
 
   @@index([code])

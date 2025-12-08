@@ -108,18 +108,23 @@ export default function WarehousesPage() {
     const fetchSupervisors = async () => {
         try {
             const token = localStorage.getItem('accessToken');
-            const response = await fetch('/api/users?role=SUPERVISOR', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await fetch(
+                '/api/users?role=SUPERVISOR&limit=100',
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
             if (!response.ok) throw new Error('Failed to fetch supervisors');
 
             const data = await response.json();
+            console.log('Supervisors data:', data); // Debug log
             setSupervisors(data.users || []);
         } catch (error) {
             console.error('Error fetching supervisors:', error);
+            setSupervisors([]); // Set empty array on error
         }
     };
 
@@ -205,6 +210,8 @@ export default function WarehousesPage() {
     };
 
     const handleEdit = (warehouse: Warehouse) => {
+        console.log('Opening edit modal for warehouse:', warehouse);
+        console.log('Available supervisors:', supervisors);
         setEditingWarehouse(warehouse);
         setFormData({
             code: warehouse.code,
@@ -217,7 +224,62 @@ export default function WarehousesPage() {
             country: warehouse.country,
             managerId: warehouse.managerId || '',
         });
+        setFormErrors({});
         setShowEditModal(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setShowEditModal(false);
+        setEditingWarehouse(null);
+        setFormData({
+            code: '',
+            name: '',
+            description: '',
+            address: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: 'Indonesia',
+            managerId: '',
+        });
+        setFormErrors({});
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!validateForm() || !editingWarehouse) return;
+
+        try {
+            setSubmitting(true);
+            const token = localStorage.getItem('accessToken');
+
+            const response = await fetch(
+                `/api/warehouses/${editingWarehouse.id}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(formData),
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update warehouse');
+            }
+
+            await fetchWarehouses();
+            handleCloseEditModal();
+            alert('Warehouse updated successfully!');
+        } catch (error: any) {
+            console.error('Error updating warehouse:', error);
+            alert(error.message || 'Failed to update warehouse');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -1089,16 +1151,45 @@ export default function WarehousesPage() {
                                             <option value=''>
                                                 No manager assigned
                                             </option>
-                                            {supervisors.map((supervisor) => (
-                                                <option
-                                                    key={supervisor.id}
-                                                    value={supervisor.id}
-                                                >
-                                                    {supervisor.fullName} (
-                                                    {supervisor.email})
+                                            {supervisors.length > 0 ? (
+                                                supervisors.map(
+                                                    (supervisor) => (
+                                                        <option
+                                                            key={supervisor.id}
+                                                            value={
+                                                                supervisor.id
+                                                            }
+                                                        >
+                                                            {
+                                                                supervisor.fullName
+                                                            }{' '}
+                                                            ({supervisor.email})
+                                                        </option>
+                                                    )
+                                                )
+                                            ) : (
+                                                <option disabled>
+                                                    No supervisors available
                                                 </option>
-                                            ))}
+                                            )}
                                         </select>
+                                        {supervisors.length === 0 && (
+                                            <p className='text-amber-600 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                No supervisors found. Please
+                                                create supervisor users first.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1156,6 +1247,483 @@ export default function WarehousesPage() {
                                                     />
                                                 </svg>
                                                 Create Warehouse
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Warehouse Modal */}
+            {showEditModal && editingWarehouse && (
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
+                    <div className='bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-slideUp'>
+                        {/* Modal Header - Sticky */}
+                        <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 rounded-t-2xl flex-shrink-0'>
+                            <div className='flex items-center justify-between'>
+                                <div className='flex items-center gap-3'>
+                                    <div className='w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center'>
+                                        <svg
+                                            className='w-6 h-6 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 className='text-2xl font-bold text-white'>
+                                            Edit Warehouse
+                                        </h2>
+                                        <p className='text-primary-100 text-sm mt-0.5'>
+                                            Update warehouse information
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleCloseEditModal}
+                                    className='w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors text-white'
+                                    disabled={submitting}
+                                >
+                                    <svg
+                                        className='w-5 h-5'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M6 18L18 6M6 6l12 12'
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body - Scrollable */}
+                        <div className='flex-1 overflow-y-auto px-8 py-6'>
+                            <form onSubmit={handleUpdate}>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                    {/* Code */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Warehouse Code{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={formData.code}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    code: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all'
+                                            placeholder='WH-001'
+                                        />
+                                        {formErrors.code && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.code}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Name */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Warehouse Name{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={formData.name}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    name: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all'
+                                            placeholder='Main Warehouse'
+                                        />
+                                        {formErrors.name && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.name}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className='md:col-span-2'>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Description (Optional)
+                                        </label>
+                                        <textarea
+                                            value={formData.description}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    description: e.target.value,
+                                                })
+                                            }
+                                            rows={3}
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none'
+                                            placeholder='Warehouse description...'
+                                        />
+                                    </div>
+
+                                    {/* Address */}
+                                    <div className='md:col-span-2'>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Address{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <textarea
+                                            value={formData.address}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    address: e.target.value,
+                                                })
+                                            }
+                                            rows={2}
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none'
+                                            placeholder='Street address'
+                                        />
+                                        {formErrors.address && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.address}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* City */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            City{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={formData.city}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    city: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all'
+                                            placeholder='Jakarta'
+                                        />
+                                        {formErrors.city && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.city}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* State */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            State/Province{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={formData.state}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    state: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all'
+                                            placeholder='DKI Jakarta'
+                                        />
+                                        {formErrors.state && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.state}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Zip Code */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Zip Code{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={formData.zipCode}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    zipCode: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all'
+                                            placeholder='12345'
+                                        />
+                                        {formErrors.zipCode && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.zipCode}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Country */}
+                                    <div>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Country{' '}
+                                            <span className='text-red-500'>
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            value={formData.country}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    country: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all'
+                                            placeholder='Indonesia'
+                                        />
+                                        {formErrors.country && (
+                                            <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.country}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Manager */}
+                                    <div className='md:col-span-2'>
+                                        <label className='block text-sm font-bold text-slate-700 mb-2'>
+                                            Warehouse Manager (Optional)
+                                        </label>
+                                        <select
+                                            value={formData.managerId}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    managerId: e.target.value,
+                                                })
+                                            }
+                                            className='w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white'
+                                        >
+                                            <option value=''>
+                                                No manager assigned
+                                            </option>
+                                            {supervisors.length > 0 ? (
+                                                supervisors.map(
+                                                    (supervisor) => (
+                                                        <option
+                                                            key={supervisor.id}
+                                                            value={
+                                                                supervisor.id
+                                                            }
+                                                        >
+                                                            {
+                                                                supervisor.fullName
+                                                            }{' '}
+                                                            ({supervisor.email})
+                                                        </option>
+                                                    )
+                                                )
+                                            ) : (
+                                                <option disabled>
+                                                    No supervisors available
+                                                </option>
+                                            )}
+                                        </select>
+                                        {supervisors.length === 0 && (
+                                            <p className='text-amber-600 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                No supervisors found. Please
+                                                create supervisor users first.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Modal Footer */}
+                                <div className='flex justify-end gap-3 mt-8 pt-6 border-t-2 border-slate-100'>
+                                    <button
+                                        type='button'
+                                        onClick={handleCloseEditModal}
+                                        className='px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-semibold'
+                                        disabled={submitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type='submit'
+                                        className='px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+                                        disabled={submitting}
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <svg
+                                                    className='animate-spin h-5 w-5'
+                                                    fill='none'
+                                                    viewBox='0 0 24 24'
+                                                >
+                                                    <circle
+                                                        className='opacity-25'
+                                                        cx='12'
+                                                        cy='12'
+                                                        r='10'
+                                                        stroke='currentColor'
+                                                        strokeWidth='4'
+                                                    ></circle>
+                                                    <path
+                                                        className='opacity-75'
+                                                        fill='currentColor'
+                                                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                                    ></path>
+                                                </svg>
+                                                Updating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg
+                                                    className='w-5 h-5'
+                                                    fill='none'
+                                                    stroke='currentColor'
+                                                    viewBox='0 0 24 24'
+                                                >
+                                                    <path
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                        strokeWidth={2}
+                                                        d='M5 13l4 4L19 7'
+                                                    />
+                                                </svg>
+                                                Update Warehouse
                                             </>
                                         )}
                                     </button>

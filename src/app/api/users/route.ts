@@ -47,10 +47,18 @@ export async function GET(request: NextRequest) {
                     role: true,
                     phone: true,
                     avatar: true,
+                    warehouseId: true,
                     active: true,
                     lastLogin: true,
                     createdAt: true,
                     updatedAt: true,
+                    warehouse: {
+                        select: {
+                            id: true,
+                            code: true,
+                            name: true,
+                        },
+                    },
                     managedWarehouse: {
                         select: {
                             id: true,
@@ -177,6 +185,9 @@ export async function POST(request: NextRequest) {
         if (warehouseId) {
             const warehouse = await prisma.warehouse.findUnique({
                 where: { id: warehouseId },
+                include: {
+                    manager: true,
+                },
             });
 
             if (!warehouse) {
@@ -186,22 +197,41 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // Check if warehouse already has a manager
-            if (role === 'SUPERVISOR') {
-                const existingManager = await prisma.warehouse.findFirst({
-                    where: {
-                        id: warehouseId,
-                        managerId: { not: null },
+            // Check if warehouse already has a manager (only for SUPERVISOR role)
+            if (role === 'SUPERVISOR' && warehouse.manager) {
+                return NextResponse.json(
+                    {
+                        error: `Warehouse already has a manager (${warehouse.manager.fullName}). Please remove the current manager first or choose a different warehouse.`,
+                        currentManager: {
+                            id: warehouse.manager.id,
+                            fullName: warehouse.manager.fullName,
+                            email: warehouse.manager.email,
+                        },
                     },
-                });
-
-                if (existingManager) {
-                    return NextResponse.json(
-                        { error: 'Warehouse already has a manager' },
-                        { status: 409 }
-                    );
-                }
+                    { status: 409 }
+                );
             }
+
+            // Note: OPERATOR can be assigned to warehouse even if it already has users
+            // Multiple operators can work in the same warehouse
+        }
+
+        // DEBUG: Log what we're about to create
+        console.log('=== DEBUG: Creating User ===');
+        console.log('Data:', { fullName, email, role, warehouseId });
+
+        // DEBUG: Check existing users in this warehouse
+        if (warehouseId) {
+            const existingUsers = await prisma.user.findMany({
+                where: { warehouseId },
+                select: {
+                    id: true,
+                    fullName: true,
+                    role: true,
+                    warehouseId: true,
+                },
+            });
+            console.log('Existing users in warehouse:', existingUsers);
         }
 
         // Create user
@@ -213,6 +243,7 @@ export async function POST(request: NextRequest) {
                 fullName,
                 role,
                 phone,
+                warehouseId: warehouseId || null,
                 active: true,
             },
             select: {
@@ -222,17 +253,39 @@ export async function POST(request: NextRequest) {
                 fullName: true,
                 role: true,
                 phone: true,
+                warehouseId: true,
                 active: true,
                 createdAt: true,
             },
         });
 
-        // If warehouse assigned and user is supervisor/admin, update warehouse manager
-        if (warehouseId && (role === 'SUPERVISOR' || role === 'ADMIN')) {
+        // DEBUG: User created successfully
+        console.log('User created:', newUser);
+
+        // If user is SUPERVISOR, also set as warehouse manager
+        if (warehouseId && role === 'SUPERVISOR') {
+            console.log('Setting as warehouse manager:', {
+                warehouseId,
+                userId: newUser.id,
+            });
             await prisma.warehouse.update({
                 where: { id: warehouseId },
                 data: { managerId: newUser.id },
             });
+        }
+
+        // DEBUG: Check all users after creation
+        if (warehouseId) {
+            const allUsers = await prisma.user.findMany({
+                where: { warehouseId },
+                select: {
+                    id: true,
+                    fullName: true,
+                    role: true,
+                    warehouseId: true,
+                },
+            });
+            console.log('All users in warehouse after creation:', allUsers);
         }
 
         // Log activity

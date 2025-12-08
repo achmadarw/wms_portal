@@ -33,7 +33,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Admin System',
   'ADMIN',
   NULL, -- Admin tidak di-assign ke warehouse tertentu
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -52,7 +52,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Sarah Supervisor Jakarta',
   'SUPERVISOR',
   'WH-JKT-001', -- Assigned to Jakarta warehouse
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -70,7 +70,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Tom Supervisor Surabaya',
   'SUPERVISOR',
   'WH-SBY-001', -- Assigned to Surabaya warehouse
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -88,7 +88,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'David Supervisor Bandung',
   'SUPERVISOR',
   'WH-BDG-001', -- Assigned to Bandung warehouse
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -110,7 +110,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'John Operator Jakarta (Morning)',
   'OPERATOR',
   'WH-JKT-001', -- Assigned to Jakarta warehouse (NOT manager)
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 ),
@@ -122,7 +122,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Lisa Operator Jakarta (Afternoon)',
   'OPERATOR',
   'WH-JKT-001', -- Assigned to Jakarta warehouse (NOT manager)
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -137,7 +137,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Mike Operator Surabaya (Morning)',
   'OPERATOR',
   'WH-SBY-001', -- Assigned to Surabaya warehouse (NOT manager)
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 ),
@@ -149,7 +149,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Anna Operator Surabaya (Afternoon)',
   'OPERATOR',
   'WH-SBY-001', -- Assigned to Surabaya warehouse (NOT manager)
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -164,7 +164,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Peter Operator Bandung (Morning)',
   'OPERATOR',
   'WH-BDG-001', -- Assigned to Bandung warehouse (NOT manager)
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 ),
@@ -176,7 +176,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Rachel Operator Bandung (Afternoon)',
   'OPERATOR',
   'WH-BDG-001', -- Assigned to Bandung warehouse (NOT manager)
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -195,7 +195,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Test User Promotion',
   'OPERATOR',
   'WH-JKT-001',
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -210,7 +210,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Test User Demotion',
   'SUPERVISOR',
   'WH-JKT-001',
-  1,
+  true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -225,7 +225,7 @@ INSERT INTO "User" (id, email, username, password, fullName, role, warehouseId, 
   'Test User Inactive',
   'OPERATOR',
   'WH-JKT-001',
-  0, -- Inactive user
+  false, -- Inactive user
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
@@ -252,14 +252,14 @@ SELECT
   COUNT(*) as total_users
 FROM "User" u
 LEFT JOIN "Warehouse" w ON u.warehouseId = w.id
-WHERE u.active = 1
+WHERE u.active = true
 GROUP BY w.name, u.role
 ORDER BY w.name, u.role;
 
 -- List all active users
 SELECT 
   u.email,
-  u.fullName,
+  u.name,
   u.role,
   w.name as warehouse,
   u.active
@@ -272,7 +272,7 @@ ORDER BY
     WHEN 'OPERATOR' THEN 3
   END,
   w.name,
-  u.fullName;
+  u.name;
 
 -- ============================================================
 -- NOTES FOR TESTING

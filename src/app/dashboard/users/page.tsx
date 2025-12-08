@@ -12,6 +12,12 @@ interface User {
     active: boolean;
     lastLogin?: string;
     createdAt: string;
+    warehouseId?: string;
+    warehouse?: {
+        id: string;
+        code: string;
+        name: string;
+    };
     managedWarehouse?: {
         id: string;
         code: string;
@@ -221,7 +227,7 @@ export default function UsersPage() {
             email: user.email,
             password: '', // Don't populate password
             role: user.role,
-            warehouseId: user.managedWarehouse?.id || '',
+            warehouseId: user.warehouse?.id || user.warehouseId || '',
             phone: user.phone || '',
         });
         setShowEditModal(true);
@@ -774,14 +780,21 @@ export default function UsersPage() {
                                         </span>
                                     </td>
                                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                                        {user.managedWarehouse ? (
+                                        {user.warehouse ? (
                                             <div>
                                                 <div className='font-medium'>
-                                                    {user.managedWarehouse.name}
+                                                    {user.warehouse.name}
                                                 </div>
                                                 <div className='text-gray-500'>
-                                                    {user.managedWarehouse.code}
+                                                    {user.warehouse.code}
                                                 </div>
+                                                {user.managedWarehouse && (
+                                                    <div className='mt-1'>
+                                                        <span className='px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded'>
+                                                            Manager
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <span className='text-gray-400'>
