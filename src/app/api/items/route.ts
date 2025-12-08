@@ -142,7 +142,6 @@ export async function POST(request: NextRequest) {
                 reorderQty: reorderQty ? parseInt(reorderQty) : 0,
                 manufacturer: manufacturer || null,
                 supplier: supplier || null,
-                leadTimeDays: leadTimeDays ? parseInt(leadTimeDays) : null,
                 imageUrl: imageUrl || null,
             },
         });

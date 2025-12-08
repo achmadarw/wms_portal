@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(
-            `[API] Manual reservation expiry triggered by ${user.fullName} (${user.role})`
+            `[API] Manual reservation expiry triggered by ${
+                user.email || 'unknown'
+            } (${user.role})`
         );
 
         // Run expiration check
