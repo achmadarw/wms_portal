@@ -5,7 +5,7 @@ import { verifyJWT, successResponse, errorResponse } from '@/lib/api-utils';
 // GET single warehouse by ID
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const auth = verifyJWT(request);
@@ -13,8 +13,10 @@ export async function GET(
             return errorResponse(auth.error || 'Unauthorized', 401);
         }
 
+        const { id } = await params;
+
         const warehouse = await prisma.warehouse.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 bins: true,
                 manager: {
@@ -42,7 +44,7 @@ export async function GET(
 // UPDATE warehouse
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const auth = verifyJWT(request);
@@ -57,6 +59,8 @@ export async function PUT(
         ) {
             return errorResponse('Insufficient permissions', 403);
         }
+
+        const { id } = await params;
 
         const {
             code,
@@ -84,7 +88,7 @@ export async function PUT(
 
         // Check if warehouse exists
         const existingWarehouse = await prisma.warehouse.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!existingWarehouse) {
@@ -97,7 +101,7 @@ export async function PUT(
                 where: { id: auth.payload.userId },
             });
 
-            if (user?.warehouseId !== params.id) {
+            if (user?.warehouseId !== id) {
                 return errorResponse(
                     'You can only edit your assigned warehouse',
                     403
@@ -116,8 +120,29 @@ export async function PUT(
             }
         }
 
+        // Check if managerId is being changed and if it's already assigned to another warehouse
+        if (managerId && managerId !== existingWarehouse.managerId) {
+            const managerExists = await prisma.warehouse.findFirst({
+                where: {
+                    managerId,
+                    id: { not: id }, // Exclude current warehouse
+                },
+            });
+
+            if (managerExists) {
+                const manager = await prisma.user.findUnique({
+                    where: { id: managerId },
+                    select: { fullName: true },
+                });
+                return errorResponse(
+                    `Manager already assigned to warehouse "${managerExists.name}". A user can only manage one warehouse.`,
+                    409
+                );
+            }
+        }
+
         const updatedWarehouse = await prisma.warehouse.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 code,
                 name,
@@ -166,7 +191,7 @@ export async function PUT(
 // DELETE warehouse (soft delete - set active to false)
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const auth = verifyJWT(request);
@@ -179,8 +204,10 @@ export async function DELETE(
             return errorResponse('Insufficient permissions', 403);
         }
 
+        const { id } = await params;
+
         const warehouse = await prisma.warehouse.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 bins: true,
             },
@@ -200,7 +227,7 @@ export async function DELETE(
 
         // Soft delete - set active to false
         const deletedWarehouse = await prisma.warehouse.update({
-            where: { id: params.id },
+            where: { id },
             data: { active: false },
         });
 

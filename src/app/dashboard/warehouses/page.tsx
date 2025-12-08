@@ -252,6 +252,7 @@ export default function WarehousesPage() {
 
         try {
             setSubmitting(true);
+            setFormErrors({}); // Clear previous errors
             const token = localStorage.getItem('accessToken');
 
             const response = await fetch(
@@ -266,17 +267,36 @@ export default function WarehousesPage() {
                 }
             );
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to update warehouse');
+                // Handle validation/business logic errors gracefully
+                if (response.status === 409) {
+                    // Conflict - manager already assigned or code exists
+                    setFormErrors({
+                        managerId:
+                            data.error ||
+                            'This manager is already assigned to another warehouse',
+                    });
+                } else {
+                    // Other errors
+                    setFormErrors({
+                        general: data.error || 'Failed to update warehouse',
+                    });
+                }
+                return; // Don't throw, just return
             }
 
             await fetchWarehouses();
             handleCloseEditModal();
             alert('Warehouse updated successfully!');
         } catch (error: any) {
+            // Only for unexpected errors (network failure, etc)
             console.error('Error updating warehouse:', error);
-            alert(error.message || 'Failed to update warehouse');
+            setFormErrors({
+                general:
+                    'Network error. Please check your connection and try again.',
+            });
         } finally {
             setSubmitting(false);
         }
@@ -1667,7 +1687,52 @@ export default function WarehousesPage() {
                                                 create supervisor users first.
                                             </p>
                                         )}
+                                        {formErrors.managerId && (
+                                            <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
+                                                <svg
+                                                    className='w-4 h-4'
+                                                    fill='currentColor'
+                                                    viewBox='0 0 20 20'
+                                                >
+                                                    <path
+                                                        fillRule='evenodd'
+                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                                                        clipRule='evenodd'
+                                                    />
+                                                </svg>
+                                                {formErrors.managerId}
+                                            </p>
+                                        )}
                                     </div>
+
+                                    {/* General Error Message */}
+                                    {formErrors.general && (
+                                        <div className='md:col-span-2'>
+                                            <div className='bg-red-50 border-2 border-red-200 rounded-xl p-4'>
+                                                <div className='flex items-start gap-3'>
+                                                    <svg
+                                                        className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5'
+                                                        fill='currentColor'
+                                                        viewBox='0 0 20 20'
+                                                    >
+                                                        <path
+                                                            fillRule='evenodd'
+                                                            d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                                                            clipRule='evenodd'
+                                                        />
+                                                    </svg>
+                                                    <div>
+                                                        <h4 className='font-semibold text-red-900'>
+                                                            Error
+                                                        </h4>
+                                                        <p className='text-sm text-red-700 mt-1'>
+                                                            {formErrors.general}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Modal Footer */}
