@@ -35,6 +35,7 @@ interface User {
     fullName: string;
     email: string;
     role: string;
+    warehouseId?: string;
 }
 
 export default function WarehousesPage() {
@@ -47,6 +48,8 @@ export default function WarehousesPage() {
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(
         null
     );
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [userRole, setUserRole] = useState<string>('');
 
     // Form state
     const [formData, setFormData] = useState({
@@ -64,6 +67,18 @@ export default function WarehousesPage() {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
+        // Load current user from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setCurrentUser(user);
+                setUserRole(user.role || '');
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+            }
+        }
+
         fetchWarehouses();
         fetchSupervisors();
     }, []);
@@ -376,25 +391,27 @@ export default function WarehousesPage() {
                             Manage warehouse locations and facilities
                         </p>
                     </div>
-                    <button
-                        onClick={handleOpenModal}
-                        className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition font-bold shadow-xl'
-                    >
-                        <svg
-                            className='w-5 h-5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
+                    {userRole === 'ADMIN' && (
+                        <button
+                            onClick={handleOpenModal}
+                            className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition font-bold shadow-xl'
                         >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M12 4v16m8-8H4'
-                            />
-                        </svg>
-                        Add New Warehouse
-                    </button>
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M12 4v16m8-8H4'
+                                />
+                            </svg>
+                            Add New Warehouse
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -814,36 +831,19 @@ export default function WarehousesPage() {
                                                     </svg>
                                                     Layout
                                                 </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleEdit(warehouse)
-                                                    }
-                                                    className='inline-flex items-center gap-1 px-3 py-1.5 text-primary-700 hover:text-white hover:bg-primary-600 border border-primary-300 rounded-lg transition-all font-medium'
-                                                >
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                                                        />
-                                                    </svg>
-                                                    Edit
-                                                </button>
-                                                {warehouse.active && (
+                                                {/* Edit button - ADMIN can edit all, SUPERVISOR can edit assigned warehouse */}
+                                                {(userRole === 'ADMIN' ||
+                                                    (userRole ===
+                                                        'SUPERVISOR' &&
+                                                        currentUser?.warehouseId ===
+                                                            warehouse.id)) && (
                                                     <button
                                                         onClick={() =>
-                                                            handleDelete(
+                                                            handleEdit(
                                                                 warehouse
                                                             )
                                                         }
-                                                        className='inline-flex items-center gap-1 px-3 py-1.5 text-red-700 hover:text-white hover:bg-red-600 border border-red-300 rounded-lg transition-all font-medium'
-                                                        title='Deactivate warehouse'
+                                                        className='inline-flex items-center gap-1 px-3 py-1.5 text-primary-700 hover:text-white hover:bg-primary-600 border border-primary-300 rounded-lg transition-all font-medium'
                                                     >
                                                         <svg
                                                             className='w-4 h-4'
@@ -855,12 +855,42 @@ export default function WarehousesPage() {
                                                                 strokeLinecap='round'
                                                                 strokeLinejoin='round'
                                                                 strokeWidth={2}
-                                                                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                                                                d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                                                             />
                                                         </svg>
-                                                        Delete
+                                                        Edit
                                                     </button>
                                                 )}
+                                                {/* Delete button - ADMIN only */}
+                                                {warehouse.active &&
+                                                    userRole === 'ADMIN' && (
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    warehouse
+                                                                )
+                                                            }
+                                                            className='inline-flex items-center gap-1 px-3 py-1.5 text-red-700 hover:text-white hover:bg-red-600 border border-red-300 rounded-lg transition-all font-medium'
+                                                            title='Deactivate warehouse'
+                                                        >
+                                                            <svg
+                                                                className='w-4 h-4'
+                                                                fill='none'
+                                                                stroke='currentColor'
+                                                                viewBox='0 0 24 24'
+                                                            >
+                                                                <path
+                                                                    strokeLinecap='round'
+                                                                    strokeLinejoin='round'
+                                                                    strokeWidth={
+                                                                        2
+                                                                    }
+                                                                    d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                                                                />
+                                                            </svg>
+                                                            Delete
+                                                        </button>
+                                                    )}
                                             </div>
                                         </td>
                                     </tr>

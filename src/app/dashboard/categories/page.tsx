@@ -11,6 +11,7 @@ import {
     ChevronRight,
     FolderTree,
 } from 'lucide-react';
+import { User } from '@prisma/client';
 
 interface Category {
     id: string;
@@ -47,6 +48,23 @@ export default function CategoriesPage() {
     const [editingCategory, setEditingCategory] = useState<Category | null>(
         null
     );
+    // RBAC: userRole from localStorage
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [userRole, setUserRole] = useState<string>('');
+
+    useEffect(() => {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setCurrentUser(user);
+                console.log('User role:', user.role);
+                setUserRole(user.role || '');
+            } catch (e) {
+                setUserRole('');
+            }
+        }
+    }, []);
 
     useEffect(() => {
         fetchCategories();
@@ -262,20 +280,27 @@ export default function CategoriesPage() {
                             items
                         </div>
                         <div className='flex gap-2'>
-                            <button
-                                onClick={() => handleOpenEditModal(category)}
-                                className='p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors'
-                                title='Edit Category'
-                            >
-                                <Edit className='w-4 h-4' />
-                            </button>
-                            <button
-                                onClick={() => handleDelete(category.id)}
-                                className='p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors'
-                                title='Delete Category'
-                            >
-                                <Trash2 className='w-4 h-4' />
-                            </button>
+                            {(userRole === 'ADMIN' ||
+                                userRole === 'SUPERVISOR') && (
+                                <button
+                                    onClick={() =>
+                                        handleOpenEditModal(category)
+                                    }
+                                    className='p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors'
+                                    title='Edit Category'
+                                >
+                                    <Edit className='w-4 h-4' />
+                                </button>
+                            )}
+                            {userRole === 'ADMIN' && (
+                                <button
+                                    onClick={() => handleDelete(category.id)}
+                                    className='p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors'
+                                    title='Delete Category'
+                                >
+                                    <Trash2 className='w-4 h-4' />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -338,13 +363,16 @@ export default function CategoriesPage() {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={handleOpenModal}
-                        className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all'
-                    >
-                        <Plus className='w-5 h-5' />
-                        Add Category
-                    </button>
+                    {/* Only show Add Category for ADMIN and SUPERVISOR */}
+                    {(userRole === 'ADMIN' || userRole === 'SUPERVISOR') && (
+                        <button
+                            onClick={handleOpenModal}
+                            className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all'
+                        >
+                            <Plus className='w-5 h-5' />
+                            Add Category
+                        </button>
+                    )}
                 </div>
             </div>
 
