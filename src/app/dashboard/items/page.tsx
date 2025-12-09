@@ -51,12 +51,12 @@ export default function ItemsPage() {
     const [showModal, setShowModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
 
-  // RBAC state
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState("");
+    // RBAC state
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [userRole, setUserRole] = useState('');
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -99,17 +99,17 @@ export default function ItemsPage() {
     ];
 
     useEffect(() => {
-    // Load current user from localStorage
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setCurrentUser(user);
-        setUserRole(user.role || "");
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
+        // Load current user from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setCurrentUser(user);
+                setUserRole(user.role || '');
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+            }
+        }
 
         fetchCategories();
         fetchItems();
@@ -446,28 +446,28 @@ export default function ItemsPage() {
                             Manage your inventory catalog and stock items
                         </p>
                     </div>
-          {/* Only ADMIN and SUPERVISOR can create items */}
-          {(userRole === "ADMIN" || userRole === "SUPERVISOR") && (
-                    <button
-                        onClick={handleOpenModal}
-                        className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition font-bold shadow-xl'
-                    >
-                        <svg
-                            className='w-5 h-5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
+                    {/* Only ADMIN and SUPERVISOR can create items */}
+                    {(userRole === 'ADMIN' || userRole === 'SUPERVISOR') && (
+                        <button
+                            onClick={handleOpenModal}
+                            className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition font-bold shadow-xl'
                         >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M12 4v16m8-8H4'
-                            />
-                        </svg>
-                        Add New Item
-                    </button>
-          )}
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M12 4v16m8-8H4'
+                                />
+                            </svg>
+                            Add New Item
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -678,18 +678,19 @@ export default function ItemsPage() {
                             <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
                                 Stock
                             </th>
-              {/* Pricing columns - hide for OPERATOR */}
-              {(userRole === "ADMIN" || userRole === "SUPERVISOR") && (
-                <>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                Unit Cost
-                            </th>
+                            {/* Pricing columns - hide for OPERATOR */}
+                            {(userRole === 'ADMIN' ||
+                                userRole === 'SUPERVISOR') && (
+                                <>
+                                    <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                        Unit Cost
+                                    </th>
+                                    <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                        Selling Price
+                                    </th>
+                                </>
+                            )}
                             <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                Selling Price
-                            </th>
-                </>
-              )}
-              <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -712,8 +713,8 @@ export default function ItemsPage() {
                         ) : items.length === 0 ? (
                             <tr>
                                 <td
-                  colSpan={userRole === "OPERATOR" ? 6 : 8}
-                  className="px-6 py-12 text-center text-slate-500"
+                                    colSpan={userRole === 'OPERATOR' ? 6 : 8}
+                                    className='px-6 py-12 text-center text-slate-500'
                                 >
                                     <div className='flex flex-col items-center gap-2'>
                                         <svg
@@ -815,67 +816,88 @@ export default function ItemsPage() {
                                                 </div>
                                             )}
                                         </td>
-                    {/* Pricing cells - hide for OPERATOR */}
-                    {(userRole === "ADMIN" || userRole === "SUPERVISOR") && (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            ${item.unitCost.toLocaleString()}
-                                        </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                                            {item.sellingPrice
-                                                ? `$${item.sellingPrice.toLocaleString()}`
-                                                : '-'}
-                                        </td>
-                      </>
-                    )}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        handleOpenEditModal(
-                                                            item
-                                                        )
-                                                    }
-                                                    className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition font-semibold'
-                                                    title='Edit item'
-                                                >
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                                                        />
-                                                    </svg>
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(item.id)
-                                                    }
-                                                    className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition font-semibold'
-                                                    title='Delete item'
-                                                >
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                                                        />
-                                                    </svg>
-                                                    Delete
-                                                </button>
+                                        {/* Pricing cells - hide for OPERATOR */}
+                                        {(userRole === 'ADMIN' ||
+                                            userRole === 'SUPERVISOR') && (
+                                            <>
+                                                <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                                                    $
+                                                    {item.unitCost.toLocaleString()}
+                                                </td>
+                                                <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                                                    {item.sellingPrice
+                                                        ? `$${item.sellingPrice.toLocaleString()}`
+                                                        : '-'}
+                                                </td>
+                                            </>
+                                        )}
+                                        <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
+                                            <div className='flex gap-2'>
+                                                {/* Only ADMIN and SUPERVISOR can edit and delete */}
+                                                {(userRole === 'ADMIN' ||
+                                                    userRole ===
+                                                        'SUPERVISOR') && (
+                                                    <>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleOpenEditModal(
+                                                                    item
+                                                                )
+                                                            }
+                                                            className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition font-semibold'
+                                                            title='Edit item'
+                                                        >
+                                                            <svg
+                                                                className='w-4 h-4'
+                                                                fill='none'
+                                                                stroke='currentColor'
+                                                                viewBox='0 0 24 24'
+                                                            >
+                                                                <path
+                                                                    strokeLinecap='round'
+                                                                    strokeLinejoin='round'
+                                                                    strokeWidth={
+                                                                        2
+                                                                    }
+                                                                    d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+                                                                />
+                                                            </svg>
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    item.id
+                                                                )
+                                                            }
+                                                            className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition font-semibold'
+                                                            title='Delete item'
+                                                        >
+                                                            <svg
+                                                                className='w-4 h-4'
+                                                                fill='none'
+                                                                stroke='currentColor'
+                                                                viewBox='0 0 24 24'
+                                                            >
+                                                                <path
+                                                                    strokeLinecap='round'
+                                                                    strokeLinejoin='round'
+                                                                    strokeWidth={
+                                                                        2
+                                                                    }
+                                                                    d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                                                                />
+                                                            </svg>
+                                                            Delete
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {/* OPERATOR sees no action buttons (read-only) */}
+                                                {userRole === 'OPERATOR' && (
+                                                    <span className='text-sm text-slate-500 italic'>
+                                                        Read-only
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

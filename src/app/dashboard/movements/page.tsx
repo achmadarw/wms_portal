@@ -59,6 +59,10 @@ export default function MovementsPage() {
         search: '',
     });
 
+    // RBAC state
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [userRole, setUserRole] = useState('');
+
     // Create Movement Modal State
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -74,6 +78,20 @@ export default function MovementsPage() {
     const [items, setItems] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [bins, setBins] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Load current user from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setCurrentUser(user);
+                setUserRole(user.role || '');
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         fetchMovements();
@@ -330,6 +348,40 @@ export default function MovementsPage() {
         } catch (error) {
             console.error('[API] Error processing movement:', error);
             alert('Failed to process movement');
+        }
+    };
+
+    const handleCancelMovement = async (movementId: string) => {
+        if (
+            !confirm(
+                'Cancel this movement? This action cannot be undone. The movement will be marked as CANCELLED and kept for audit trail.'
+            )
+        ) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`/api/movements/${movementId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ action: 'cancel' }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || 'Movement cancelled successfully!');
+                fetchMovements(); // Refresh list
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to cancel movement');
+            }
+        } catch (error) {
+            console.error('[API] Error cancelling movement:', error);
+            alert('Failed to cancel movement');
         }
     };
 
@@ -708,165 +760,359 @@ export default function MovementsPage() {
                 </div>
             </div>
 
-            {/* Movements Table */}
+            {/* Movements Table - Modern Card-Based Layout */}
             <div className='bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden'>
                 <div className='overflow-x-auto'>
-                    <table className='min-w-full divide-y divide-slate-200'>
-                        <thead className='bg-gradient-to-r from-slate-50 to-slate-100'>
+                    <table className='min-w-full'>
+                        <thead className='bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200'>
                             <tr>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                    Reference No
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[180px]'>
+                                    Reference
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                    Date & Time
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[280px]'>
+                                    Item Details
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                    Item
-                                </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[100px]'>
                                     Type
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[100px]'>
                                     Status
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[100px]'>
                                     Quantity
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                    Warehouse
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[180px]'>
+                                    Warehouse & Location
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                    Location
-                                </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                <th className='px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider w-[200px]'>
                                     Notes
                                 </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                    By
-                                </th>
-                                <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                <th className='px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider w-[140px]'>
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className='bg-white divide-y divide-gray-200'>
+                        <tbody className='bg-white divide-y divide-slate-100'>
                             {movements.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={11}
-                                        className='px-6 py-12 text-center text-gray-500'
+                                        colSpan={8}
+                                        className='px-6 py-16 text-center'
                                     >
-                                        No movements found
+                                        <div className='flex flex-col items-center justify-center'>
+                                            <svg
+                                                className='w-16 h-16 text-slate-300 mb-4'
+                                                fill='none'
+                                                stroke='currentColor'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={1.5}
+                                                    d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4'
+                                                />
+                                            </svg>
+                                            <p className='text-slate-500 font-medium'>
+                                                No movements found
+                                            </p>
+                                            <p className='text-slate-400 text-sm mt-1'>
+                                                Try adjusting your filters
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (
                                 movements.map((movement) => (
                                     <tr
                                         key={movement.id}
-                                        className='hover:bg-gray-50'
+                                        className='hover:bg-slate-50 transition-colors'
                                     >
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600'>
-                                            {movement.referenceNo}
-                                        </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                                            {formatDate(movement.createdAt)}
-                                        </td>
-                                        <td className='px-6 py-4'>
-                                            <div className='text-sm font-medium text-gray-900'>
-                                                {movement.item.itemMaster.name}
+                                        {/* Reference Column */}
+                                        <td className='px-4 py-3'>
+                                            <div className='space-y-1'>
+                                                <div
+                                                    className='text-xs font-mono text-blue-600 font-semibold truncate'
+                                                    title={movement.referenceNo}
+                                                >
+                                                    {movement.referenceNo}
+                                                </div>
+                                                <div className='text-xs text-slate-500'>
+                                                    {new Date(
+                                                        movement.createdAt
+                                                    ).toLocaleDateString(
+                                                        'en-US',
+                                                        {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                        }
+                                                    )}
+                                                </div>
+                                                <div className='text-xs text-slate-400'>
+                                                    {new Date(
+                                                        movement.createdAt
+                                                    ).toLocaleTimeString(
+                                                        'en-US',
+                                                        {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                        }
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className='text-sm text-gray-500'>
-                                                SKU:{' '}
-                                                {movement.item.itemMaster.sku}
+                                        </td>
+
+                                        {/* Item Details Column */}
+                                        <td className='px-4 py-3'>
+                                            <div className='space-y-1'>
+                                                <div
+                                                    className='text-sm font-semibold text-slate-900 truncate max-w-[260px]'
+                                                    title={
+                                                        movement.item.itemMaster
+                                                            .name
+                                                    }
+                                                >
+                                                    {
+                                                        movement.item.itemMaster
+                                                            .name
+                                                    }
+                                                </div>
+                                                <div className='flex items-center gap-2'>
+                                                    <span className='text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded'>
+                                                        {
+                                                            movement.item
+                                                                .itemMaster.sku
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <div className='text-xs text-slate-400'>
+                                                    By:{' '}
+                                                    {
+                                                        movement.createdBy.fullName.split(
+                                                            ' '
+                                                        )[0]
+                                                    }
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className='px-6 py-4 whitespace-nowrap'>
+
+                                        {/* Type Column */}
+                                        <td className='px-4 py-3'>
                                             <span
-                                                className={`px-2 py-1 text-xs rounded-full ${getTypeColor(
+                                                className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full ${getTypeColor(
                                                     movement.type
                                                 )}`}
                                             >
                                                 {movement.type}
                                             </span>
                                         </td>
-                                        <td className='px-6 py-4 whitespace-nowrap'>
+
+                                        {/* Status Column */}
+                                        <td className='px-4 py-3'>
                                             <span
-                                                className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
+                                                className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full ${getStatusColor(
                                                     movement.status
                                                 )}`}
                                             >
                                                 {movement.status}
                                             </span>
                                         </td>
-                                        <td className='px-6 py-4 whitespace-nowrap'>
-                                            <span
-                                                className={`font-semibold ${
-                                                    movement.quantity > 0
-                                                        ? 'text-green-600'
-                                                        : 'text-red-600'
-                                                }`}
+
+                                        {/* Quantity Column */}
+                                        <td className='px-4 py-3'>
+                                            <div className='flex flex-col'>
+                                                <span
+                                                    className={`text-lg font-bold ${
+                                                        movement.quantity > 0
+                                                            ? 'text-green-600'
+                                                            : 'text-red-600'
+                                                    }`}
+                                                >
+                                                    {movement.quantity > 0
+                                                        ? '+'
+                                                        : ''}
+                                                    {movement.quantity}
+                                                </span>
+                                                <span className='text-xs text-slate-500 font-medium'>
+                                                    {
+                                                        movement.item.itemMaster
+                                                            .unitOfMeasure
+                                                    }
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        {/* Warehouse & Location Column */}
+                                        <td className='px-4 py-3'>
+                                            <div className='space-y-1'>
+                                                <div
+                                                    className='text-xs font-semibold text-slate-700 truncate'
+                                                    title={
+                                                        movement.warehouse.name
+                                                    }
+                                                >
+                                                    {movement.warehouse.name}
+                                                </div>
+                                                {movement.fromBin && (
+                                                    <div className='flex items-center gap-1 text-xs'>
+                                                        <span className='text-slate-400'>
+                                                            From:
+                                                        </span>
+                                                        <span className='text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[10px]'>
+                                                            {movement.fromBin}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {movement.toBin && (
+                                                    <div className='flex items-center gap-1 text-xs'>
+                                                        <span className='text-slate-400'>
+                                                            To:
+                                                        </span>
+                                                        <span className='text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[10px]'>
+                                                            {movement.toBin}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {!movement.fromBin &&
+                                                    !movement.toBin && (
+                                                        <span className='text-slate-400 text-xs'>
+                                                            -
+                                                        </span>
+                                                    )}
+                                            </div>
+                                        </td>
+
+                                        {/* Notes Column */}
+                                        <td className='px-4 py-3'>
+                                            <div
+                                                className='text-xs text-slate-600 line-clamp-2 max-w-[190px]'
+                                                title={movement.notes || '-'}
                                             >
-                                                {movement.quantity > 0
-                                                    ? '+'
-                                                    : ''}
-                                                {movement.quantity}{' '}
-                                                {
-                                                    movement.item.itemMaster
-                                                        .unitOfMeasure
-                                                }
-                                            </span>
-                                        </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                                            {movement.warehouse.name}
-                                        </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                                            {movement.fromBin && (
-                                                <span>
-                                                    From: {movement.fromBin}
-                                                </span>
-                                            )}
-                                            {movement.fromBin &&
-                                                movement.toBin && <br />}
-                                            {movement.toBin && (
-                                                <span>
-                                                    To: {movement.toBin}
-                                                </span>
-                                            )}
-                                            {!movement.fromBin &&
-                                                !movement.toBin && (
-                                                    <span className='text-gray-400'>
-                                                        -
+                                                {movement.notes || (
+                                                    <span className='text-slate-400'>
+                                                        No notes
                                                     </span>
                                                 )}
+                                            </div>
                                         </td>
-                                        <td className='px-6 py-4 text-sm text-gray-500'>
-                                            {movement.notes || '-'}
-                                        </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                                            {movement.createdBy.fullName}
-                                        </td>
-                                        <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                                            {movement.status === 'PENDING' ? (
-                                                <button
-                                                    onClick={() =>
-                                                        handleProcessMovement(
-                                                            movement.id
-                                                        )
-                                                    }
-                                                    className='bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors'
-                                                >
-                                                    Process
-                                                </button>
-                                            ) : movement.status ===
-                                              'COMPLETED' ? (
-                                                <span className='text-green-600 text-xs font-medium'>
-                                                    ✓ Completed
-                                                </span>
-                                            ) : (
-                                                <span className='text-gray-400 text-xs'>
-                                                    {movement.status}
-                                                </span>
-                                            )}
+
+                                        {/* Actions Column */}
+                                        <td className='px-4 py-3'>
+                                            <div className='flex items-center justify-end gap-1.5'>
+                                                {movement.status ===
+                                                'PENDING' ? (
+                                                    userRole === 'ADMIN' ||
+                                                    userRole ===
+                                                        'SUPERVISOR' ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleProcessMovement(
+                                                                        movement.id
+                                                                    )
+                                                                }
+                                                                className='inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow'
+                                                                title='Process Movement'
+                                                            >
+                                                                <svg
+                                                                    className='w-3.5 h-3.5'
+                                                                    fill='none'
+                                                                    stroke='currentColor'
+                                                                    viewBox='0 0 24 24'
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap='round'
+                                                                        strokeLinejoin='round'
+                                                                        strokeWidth={
+                                                                            2
+                                                                        }
+                                                                        d='M5 13l4 4L19 7'
+                                                                    />
+                                                                </svg>
+                                                                Process
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleCancelMovement(
+                                                                        movement.id
+                                                                    )
+                                                                }
+                                                                className='inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow'
+                                                                title='Cancel Movement'
+                                                            >
+                                                                <svg
+                                                                    className='w-3.5 h-3.5'
+                                                                    fill='none'
+                                                                    stroke='currentColor'
+                                                                    viewBox='0 0 24 24'
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap='round'
+                                                                        strokeLinejoin='round'
+                                                                        strokeWidth={
+                                                                            2
+                                                                        }
+                                                                        d='M6 18L18 6M6 6l12 12'
+                                                                    />
+                                                                </svg>
+                                                                Cancel
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <span className='inline-flex items-center gap-1.5 text-yellow-700 text-xs font-semibold bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200'>
+                                                            <svg
+                                                                className='w-3.5 h-3.5 animate-pulse'
+                                                                fill='currentColor'
+                                                                viewBox='0 0 20 20'
+                                                            >
+                                                                <path
+                                                                    fillRule='evenodd'
+                                                                    d='M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z'
+                                                                    clipRule='evenodd'
+                                                                />
+                                                            </svg>
+                                                            Awaiting
+                                                        </span>
+                                                    )
+                                                ) : movement.status ===
+                                                  'COMPLETED' ? (
+                                                    <span className='inline-flex items-center gap-1.5 text-green-700 text-xs font-semibold bg-green-50 px-3 py-1.5 rounded-lg border border-green-200'>
+                                                        <svg
+                                                            className='w-3.5 h-3.5'
+                                                            fill='currentColor'
+                                                            viewBox='0 0 20 20'
+                                                        >
+                                                            <path
+                                                                fillRule='evenodd'
+                                                                d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+                                                                clipRule='evenodd'
+                                                            />
+                                                        </svg>
+                                                        Done
+                                                    </span>
+                                                ) : movement.status ===
+                                                  'CANCELLED' ? (
+                                                    <span className='inline-flex items-center gap-1.5 text-red-700 text-xs font-semibold bg-red-50 px-3 py-1.5 rounded-lg border border-red-200'>
+                                                        <svg
+                                                            className='w-3.5 h-3.5'
+                                                            fill='currentColor'
+                                                            viewBox='0 0 20 20'
+                                                        >
+                                                            <path
+                                                                fillRule='evenodd'
+                                                                d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                                                                clipRule='evenodd'
+                                                            />
+                                                        </svg>
+                                                        Cancelled
+                                                    </span>
+                                                ) : (
+                                                    <span className='text-slate-400 text-xs'>
+                                                        {movement.status}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

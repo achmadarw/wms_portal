@@ -85,6 +85,16 @@ export async function PATCH(
         const { action } = body;
 
         if (action === 'process' || action === 'complete') {
+            // RBAC: Only ADMIN and SUPERVISOR can process movements
+            if (user.role !== 'ADMIN' && user.role !== 'SUPERVISOR') {
+                return NextResponse.json(
+                    {
+                        error: 'Forbidden - Only ADMIN or SUPERVISOR can process movements',
+                    },
+                    { status: 403 }
+                );
+            }
+
             // Process movement (PENDING → COMPLETED)
             const result = await processMovement(params.id);
 
@@ -100,6 +110,16 @@ export async function PATCH(
                 movement: result.movement,
             });
         } else if (action === 'cancel') {
+            // RBAC: Only ADMIN and SUPERVISOR can cancel movements
+            if (user.role !== 'ADMIN' && user.role !== 'SUPERVISOR') {
+                return NextResponse.json(
+                    {
+                        error: 'Forbidden - Only ADMIN or SUPERVISOR can cancel movements',
+                    },
+                    { status: 403 }
+                );
+            }
+
             // Cancel movement
             const movement = await prisma.movement.update({
                 where: { id: params.id },
@@ -156,6 +176,14 @@ export async function DELETE(
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // RBAC: Only ADMIN can delete movements
+        if (user.role !== 'ADMIN') {
+            return NextResponse.json(
+                { error: 'Forbidden - Only ADMIN can delete movements' },
+                { status: 403 }
             );
         }
 
