@@ -262,19 +262,111 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
     // Check inventory item exists
     const item = await prisma.inventoryItem.findUnique({
         where: { id: params.inventoryItemId },
+        include: {
+            itemMaster: true,
+            bin: true,
+        },
     });
 
     if (!item) {
         errors.push('Inventory item not found');
-    } else {
-        // Check availability for outbound movements
-        if (['OUTBOUND', 'TRANSFER', 'DAMAGE'].includes(params.type)) {
-            if (item.availableQty < params.quantity) {
+        return { valid: false, errors };
+    }
+
+    // CRITICAL VALIDATIONS FOR EACH MOVEMENT TYPE
+    switch (params.type) {
+        case 'OUTBOUND':
+        case 'DAMAGE':
+            // Must have inventory in the source bin
+            if (!params.fromBinId) {
                 errors.push(
-                    `Insufficient available quantity. Available: ${item.availableQty}, Required: ${params.quantity}`
+                    'Source bin is required for OUTBOUND/DAMAGE movements'
+                );
+            } else if (item.binId !== params.fromBinId) {
+                errors.push(
+                    `Item is not available in the specified source bin. Item is in bin: ${
+                        item.bin?.code || 'N/A'
+                    }`
                 );
             }
-        }
+
+            // Must have sufficient quantity
+            if (item.quantity === 0) {
+                errors.push(
+                    `Item "${item.itemMaster.name}" has no stock in this location. Please ensure inventory exists before creating OUTBOUND/DAMAGE movement.`
+                );
+            } else if (item.availableQty < params.quantity) {
+                errors.push(
+                    `Insufficient available quantity. Available: ${item.availableQty} ${item.itemMaster.unitOfMeasure}, Required: ${params.quantity} ${item.itemMaster.unitOfMeasure}`
+                );
+            }
+            break;
+
+        case 'TRANSFER':
+            // Must have inventory in the source bin
+            if (!params.fromBinId) {
+                errors.push('Source bin is required for TRANSFER movements');
+            } else if (item.binId !== params.fromBinId) {
+                errors.push(
+                    `Item is not available in the specified source bin. Item is in bin: ${
+                        item.bin?.code || 'N/A'
+                    }`
+                );
+            }
+
+            if (!params.toBinId) {
+                errors.push(
+                    'Destination bin is required for TRANSFER movements'
+                );
+            }
+
+            if (params.fromBinId === params.toBinId) {
+                errors.push('Source and destination bins must be different');
+            }
+
+            // Must have sufficient quantity
+            if (item.quantity === 0) {
+                errors.push(
+                    `Item "${item.itemMaster.name}" has no stock in source bin. Please ensure inventory exists before creating TRANSFER movement.`
+                );
+            } else if (item.availableQty < params.quantity) {
+                errors.push(
+                    `Insufficient available quantity. Available: ${item.availableQty} ${item.itemMaster.unitOfMeasure}, Required: ${params.quantity} ${item.itemMaster.unitOfMeasure}`
+                );
+            }
+            break;
+
+        case 'ADJUSTMENT':
+            // Adjustment requires existing inventory record
+            if (item.quantity === 0 && params.quantity === 0) {
+                errors.push(
+                    `Cannot adjust inventory for item "${item.itemMaster.name}" with zero quantity. Use INBOUND to receive items first.`
+                );
+            }
+
+            // Validate adjustment quantity is reasonable
+            if (params.quantity < 0) {
+                errors.push(
+                    'Adjustment quantity cannot be negative. Use positive number for the new total quantity.'
+                );
+            }
+            break;
+
+        case 'INBOUND':
+            // INBOUND can create new inventory, so less strict
+            if (!params.toBinId) {
+                errors.push(
+                    'Destination bin is required for INBOUND movements'
+                );
+            }
+            break;
+
+        case 'RETURN':
+            // RETURN can add to existing or create new inventory
+            if (!params.toBinId) {
+                errors.push('Destination bin is required for RETURN movements');
+            }
+            break;
     }
 
     // Check bins exist
@@ -284,6 +376,10 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
         });
         if (!fromBin) {
             errors.push('Source bin not found');
+        } else if (fromBin.warehouseId !== params.warehouseId) {
+            errors.push(
+                'Source bin does not belong to the specified warehouse'
+            );
         }
     }
 
@@ -293,6 +389,50 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
         });
         if (!toBin) {
             errors.push('Destination bin not found');
+        } else if (toBin.warehouseId !== params.warehouseId) {
+            errors.push(
+                'Destination bin does not belong to the specified warehouse'
+            );
+        } else {
+            // Check bin capacity for INBOUND, RETURN, and TRANSFER movements
+            if (
+                params.type === 'INBOUND' ||
+                params.type === 'RETURN' ||
+                params.type === 'TRANSFER'
+            ) {
+                const currentOccupancy = toBin.currentQty || 0;
+                const maxCapacity = toBin.maxCapacity || 0;
+
+                // Calculate pending quantities that will be added to this bin
+                const pendingInbound = await prisma.movement.aggregate({
+                    where: {
+                        toBin: params.toBinId,
+                        status: 'PENDING',
+                        type: {
+                            in: ['INBOUND', 'RETURN', 'TRANSFER'],
+                        },
+                    },
+                    _sum: {
+                        quantity: true,
+                    },
+                });
+
+                const plannedOccupancy =
+                    currentOccupancy + (pendingInbound._sum.quantity || 0);
+                const availableSpace = maxCapacity - plannedOccupancy;
+
+                if (params.quantity > availableSpace) {
+                    errors.push(
+                        `Destination bin "${toBin.code}" has insufficient capacity. ` +
+                            `Available space: ${availableSpace} units, ` +
+                            `Required: ${params.quantity} units, ` +
+                            `Current occupancy: ${currentOccupancy}/${maxCapacity}` +
+                            (pendingInbound._sum.quantity
+                                ? `, Pending: ${pendingInbound._sum.quantity}`
+                                : '')
+                    );
+                }
+            }
         }
     }
 

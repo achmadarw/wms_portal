@@ -202,34 +202,62 @@ export async function POST(request: NextRequest) {
                 itemId
             );
 
-            // Find or create inventory item based on movement type
+            // Determine the target bin based on movement type
+            const targetBinId =
+                type === 'INBOUND' || type === 'RETURN'
+                    ? finalToBinId || null
+                    : finalFromBinId || null;
+
+            // Find existing inventory item
             let inventoryItem = await prisma.inventoryItem.findFirst({
                 where: {
                     itemMasterId: itemId,
                     warehouseId: warehouseId,
-                    binId:
-                        type === 'INBOUND'
-                            ? finalToBinId || null
-                            : finalFromBinId || null,
+                    binId: targetBinId,
                 },
             });
 
             if (!inventoryItem) {
-                console.log('[DEBUG] Creating new inventory item');
-                // Create new inventory item
-                inventoryItem = await prisma.inventoryItem.create({
-                    data: {
-                        itemMasterId: itemId,
-                        warehouseId: warehouseId,
-                        binId:
-                            type === 'INBOUND'
-                                ? finalToBinId || null
-                                : finalFromBinId || null,
-                        quantity: 0,
-                        availableQty: 0,
-                        reservedQty: 0,
-                    },
-                });
+                // Only INBOUND and RETURN can create new inventory items
+                if (type === 'INBOUND' || type === 'RETURN') {
+                    console.log(
+                        '[DEBUG] Creating new inventory item for INBOUND/RETURN'
+                    );
+                    inventoryItem = await prisma.inventoryItem.create({
+                        data: {
+                            itemMasterId: itemId,
+                            warehouseId: warehouseId,
+                            binId: targetBinId,
+                            quantity: 0,
+                            availableQty: 0,
+                            reservedQty: 0,
+                        },
+                    });
+                } else {
+                    // For OUTBOUND, TRANSFER, DAMAGE, ADJUSTMENT - inventory must exist
+                    return NextResponse.json(
+                        {
+                            error: `Cannot create ${type} movement. Item does not exist in the specified bin/warehouse. Please ensure inventory exists (via INBOUND) before creating ${type} movement.`,
+                        },
+                        { status: 400 }
+                    );
+                }
+            } else {
+                // For OUTBOUND, TRANSFER, DAMAGE, ADJUSTMENT - check if inventory has stock
+                if (
+                    (type === 'OUTBOUND' ||
+                        type === 'TRANSFER' ||
+                        type === 'DAMAGE' ||
+                        type === 'ADJUSTMENT') &&
+                    inventoryItem.quantity === 0
+                ) {
+                    return NextResponse.json(
+                        {
+                            error: `Cannot create ${type} movement. Item has zero quantity in the specified bin. Current stock: 0. Please receive inventory first via INBOUND movement.`,
+                        },
+                        { status: 400 }
+                    );
+                }
             }
 
             finalInventoryItemId = inventoryItem.id;

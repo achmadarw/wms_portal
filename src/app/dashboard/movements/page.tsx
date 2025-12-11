@@ -78,6 +78,15 @@ export default function MovementsPage() {
     const [items, setItems] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [bins, setBins] = useState<any[]>([]);
+    const [availableStock, setAvailableStock] = useState<number | null>(null);
+    const [loadingStock, setLoadingStock] = useState(false);
+    // Bin capacity info for validation
+    const [binCapacityInfo, setBinCapacityInfo] = useState<{
+        currentQty: number;
+        maxCapacity: number;
+        pendingQty: number;
+        availableSpace: number;
+    } | null>(null);
 
     useEffect(() => {
         // Load current user from localStorage
@@ -102,6 +111,86 @@ export default function MovementsPage() {
             fetchFormData();
         }
     }, [showCreateModal]);
+
+    // Fetch items when movement type changes
+    useEffect(() => {
+        const fetchFilteredItems = async () => {
+            if (showCreateModal && createForm.type) {
+                try {
+                    const token = localStorage.getItem('accessToken');
+                    const response = await fetch(
+                        `/api/movements/available-items?type=${createForm.type}`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    if (response.ok) {
+                        const data = await response.json();
+                        setItems(data.items || []);
+                    }
+                } catch (error) {
+                    console.error(
+                        '[API] Error fetching filtered items:',
+                        error
+                    );
+                }
+            }
+        };
+        fetchFilteredItems();
+    }, [showCreateModal, createForm.type]);
+
+    // Fetch warehouses/bins when item changes
+    useEffect(() => {
+        const fetchFilteredWarehousesAndBins = async () => {
+            if (showCreateModal && createForm.itemId && createForm.type) {
+                try {
+                    const token = localStorage.getItem('accessToken');
+                    const response = await fetch(
+                        `/api/movements/available-bins?itemId=${createForm.itemId}&type=${createForm.type}`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    if (response.ok) {
+                        const data = await response.json();
+                        const fetchedWarehouses = data.warehouses || [];
+                        setWarehouses(fetchedWarehouses);
+
+                        // If current warehouse is not in the filtered list, reset it
+                        if (
+                            createForm.warehouseId &&
+                            !fetchedWarehouses.find(
+                                (w: any) => w.id === createForm.warehouseId
+                            )
+                        ) {
+                            setCreateForm((prev) => ({
+                                ...prev,
+                                warehouseId: '',
+                                fromBin: '',
+                                toBin: '',
+                            }));
+                        }
+
+                        // Update bins for the selected warehouse
+                        if (createForm.warehouseId) {
+                            const selectedWarehouse = fetchedWarehouses.find(
+                                (w: any) => w.id === createForm.warehouseId
+                            );
+                            setBins(selectedWarehouse?.bins || []);
+                        } else {
+                            setBins([]);
+                        }
+                    }
+                } catch (error) {
+                    console.error(
+                        '[API] Error fetching filtered warehouses/bins:',
+                        error
+                    );
+                }
+            }
+        };
+        fetchFilteredWarehousesAndBins();
+    }, [showCreateModal, createForm.itemId, createForm.type]);
 
     // Fetch bins when warehouse changes
     useEffect(() => {
@@ -142,6 +231,117 @@ export default function MovementsPage() {
         };
         fetchBins();
     }, [createForm.warehouseId]);
+
+    // Fetch available stock when item and warehouse are selected (for OUTBOUND/TRANSFER/DAMAGE)
+    useEffect(() => {
+        const fetchTotalAvailableStock = async () => {
+            const needsStockCheck = [
+                'OUTBOUND',
+                'TRANSFER',
+                'DAMAGE',
+                'ADJUSTMENT',
+            ].includes(createForm.type);
+
+            if (
+                needsStockCheck &&
+                createForm.itemId &&
+                createForm.warehouseId
+            ) {
+                setLoadingStock(true);
+                try {
+                    const token = localStorage.getItem('accessToken');
+
+                    // If fromBin is selected, get stock for that specific bin
+                    if (createForm.fromBin) {
+                        const response = await fetch(
+                            `/api/inventory/check-stock?itemId=${createForm.itemId}&warehouseId=${createForm.warehouseId}&binCode=${createForm.fromBin}`,
+                            {
+                                headers: { Authorization: `Bearer ${token}` },
+                            }
+                        );
+                        if (response.ok) {
+                            const data = await response.json();
+                            setAvailableStock(data.availableQty || 0);
+                        } else {
+                            setAvailableStock(0);
+                        }
+                    } else {
+                        // If no bin selected, get total stock for item in warehouse
+                        const response = await fetch(
+                            `/api/inventory/check-stock?itemId=${createForm.itemId}&warehouseId=${createForm.warehouseId}`,
+                            {
+                                headers: { Authorization: `Bearer ${token}` },
+                            }
+                        );
+                        if (response.ok) {
+                            const data = await response.json();
+                            setAvailableStock(data.availableQty || 0);
+                        } else {
+                            setAvailableStock(0);
+                        }
+                    }
+                } catch (error) {
+                    console.error(
+                        '[API] Error fetching available stock:',
+                        error
+                    );
+                    setAvailableStock(0);
+                } finally {
+                    setLoadingStock(false);
+                }
+            } else {
+                // For INBOUND/RETURN or incomplete form, reset stock state
+                setAvailableStock(null);
+                setLoadingStock(false);
+            }
+        };
+        fetchTotalAvailableStock();
+    }, [
+        createForm.itemId,
+        createForm.warehouseId,
+        createForm.fromBin,
+        createForm.type,
+    ]);
+
+    // Fetch bin capacity info when toBin changes (for INBOUND/RETURN/TRANSFER)
+    useEffect(() => {
+        const fetchBinCapacityInfo = async () => {
+            if (
+                ['INBOUND', 'RETURN', 'TRANSFER'].includes(createForm.type) &&
+                createForm.toBin &&
+                createForm.warehouseId
+            ) {
+                try {
+                    const token = localStorage.getItem('accessToken');
+                    const res = await fetch(
+                        `/api/bins/capacity?binCode=${createForm.toBin}&warehouseId=${createForm.warehouseId}`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    if (res.ok) {
+                        const data = await res.json();
+                        setBinCapacityInfo({
+                            currentQty: data.currentQty || 0,
+                            maxCapacity: data.maxCapacity || 0,
+                            pendingQty: data.pendingQty || 0,
+                            availableSpace:
+                                (data.maxCapacity || 0) -
+                                ((data.currentQty || 0) +
+                                    (data.pendingQty || 0)),
+                        });
+                    } else {
+                        setBinCapacityInfo(null);
+                    }
+                } catch (error) {
+                    setBinCapacityInfo(null);
+                }
+            } else {
+                setBinCapacityInfo(null);
+            }
+        };
+        fetchBinCapacityInfo();
+    }, [createForm.toBin, createForm.warehouseId, createForm.type]);
 
     const fetchMovements = async () => {
         try {
@@ -203,50 +403,40 @@ export default function MovementsPage() {
         try {
             const token = localStorage.getItem('accessToken');
 
-            // Fetch warehouses
-            const warehousesRes = await fetch('/api/warehouses', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (warehousesRes.ok) {
-                const warehousesData = await warehousesRes.json();
-                setWarehouses(warehousesData.warehouses || []);
-            }
-
-            // Fetch all items (ItemMaster) - not inventory items
-            console.log('[DEBUG] Fetching items from ItemMaster');
-            const itemsRes = await fetch('/api/items', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            console.log(
-                '[DEBUG] Items fetch response status:',
-                itemsRes.status
-            );
-            if (itemsRes.ok) {
-                const itemsData = await itemsRes.json();
-                console.log('[DEBUG] Items response:', itemsData);
-                console.log(
-                    '[DEBUG] Items array length:',
-                    itemsData.items?.length
-                );
-                if (itemsData.items && itemsData.items.length > 0) {
-                    console.log('[DEBUG] First item:', itemsData.items[0]);
-                }
-                setItems(itemsData.items || []);
-            } else {
-                console.error('[API] Failed to fetch items:', itemsRes.status);
-            }
-
-            // Fetch bins if warehouse selected
-            if (createForm.warehouseId) {
-                const binsRes = await fetch(
-                    `/api/warehouses/bins?warehouseId=${createForm.warehouseId}`,
+            // Fetch filtered items based on movement type
+            if (createForm.type) {
+                const itemsRes = await fetch(
+                    `/api/movements/available-items?type=${createForm.type}`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
                 );
-                if (binsRes.ok) {
-                    const binsData = await binsRes.json();
-                    setBins(binsData.bins || []);
+                if (itemsRes.ok) {
+                    const itemsData = await itemsRes.json();
+                    setItems(itemsData.items || []);
+                }
+            }
+
+            // Fetch filtered warehouses/bins if item is selected
+            if (createForm.itemId && createForm.type) {
+                const warehousesRes = await fetch(
+                    `/api/movements/available-bins?itemId=${createForm.itemId}&type=${createForm.type}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+                if (warehousesRes.ok) {
+                    const warehousesData = await warehousesRes.json();
+                    const fetchedWarehouses = warehousesData.warehouses || [];
+                    setWarehouses(fetchedWarehouses);
+
+                    // Update bins for the selected warehouse
+                    if (createForm.warehouseId) {
+                        const selectedWarehouse = fetchedWarehouses.find(
+                            (w: any) => w.id === createForm.warehouseId
+                        );
+                        setBins(selectedWarehouse?.bins || []);
+                    }
                 }
             }
         } catch (error) {
@@ -305,6 +495,7 @@ export default function MovementsPage() {
                 toBin: '',
                 notes: '',
             });
+            setAvailableStock(null);
             setShowCreateModal(false);
 
             // Refresh movements list
@@ -1160,7 +1351,23 @@ export default function MovementsPage() {
                                 </p>
                             </div>
                             <button
-                                onClick={() => setShowCreateModal(false)}
+                                onClick={() => {
+                                    setCreateForm({
+                                        itemId: '',
+                                        type: 'INBOUND',
+                                        quantity: '',
+                                        warehouseId: '',
+                                        fromBin: '',
+                                        toBin: '',
+                                        notes: '',
+                                    });
+                                    setItems([]);
+                                    setWarehouses([]);
+                                    setBins([]);
+                                    setAvailableStock(null);
+                                    setLoadingStock(false);
+                                    setShowCreateModal(false);
+                                }}
                                 className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
                                 title='Close'
                             >
@@ -1206,12 +1413,20 @@ export default function MovementsPage() {
                                     </label>
                                     <select
                                         value={createForm.type}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
                                             setCreateForm({
                                                 ...createForm,
                                                 type: e.target.value,
-                                            })
-                                        }
+                                                itemId: '',
+                                                warehouseId: '',
+                                                fromBin: '',
+                                                toBin: '',
+                                            });
+                                            setItems([]);
+                                            setWarehouses([]);
+                                            setBins([]);
+                                            setAvailableStock(null);
+                                        }}
                                         required
                                         className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
                                     >
@@ -1272,17 +1487,29 @@ export default function MovementsPage() {
                                     </label>
                                     <select
                                         value={createForm.itemId}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
                                             setCreateForm({
                                                 ...createForm,
                                                 itemId: e.target.value,
-                                            })
-                                        }
+                                                warehouseId: '',
+                                                fromBin: '',
+                                                toBin: '',
+                                            });
+                                            setWarehouses([]);
+                                            setBins([]);
+                                            setAvailableStock(null);
+                                            setLoadingStock(false);
+                                        }}
                                         required
-                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                        disabled={!createForm.type}
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed'
                                     >
                                         <option value=''>
-                                            Select an item...
+                                            {!createForm.type
+                                                ? 'Select movement type first...'
+                                                : items.length === 0
+                                                ? 'No items available...'
+                                                : 'Select an item...'}
                                         </option>
                                         {items.map((item) => (
                                             <option
@@ -1293,6 +1520,19 @@ export default function MovementsPage() {
                                             </option>
                                         ))}
                                     </select>
+                                    {/* {createForm.type &&
+                                        createForm.type !== 'INBOUND' &&
+                                        createForm.type !== 'RETURN' &&
+                                        items.length === 0 && (
+                                            <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                                                <p className='text-xs text-yellow-800 font-medium'>
+                                                    ⚠️ No items with available
+                                                    stock found. Only items with
+                                                    stock &gt; 0 can be used for
+                                                    this movement type.
+                                                </p>
+                                            </div>
+                                        )} */}
                                 </div>
 
                                 {/* Warehouse */}
@@ -1316,66 +1556,57 @@ export default function MovementsPage() {
                                     <select
                                         value={createForm.warehouseId}
                                         onChange={(e) => {
+                                            const selectedWarehouseId =
+                                                e.target.value;
+                                            const selectedWarehouse =
+                                                warehouses.find(
+                                                    (w: any) =>
+                                                        w.id ===
+                                                        selectedWarehouseId
+                                                );
                                             setCreateForm({
                                                 ...createForm,
-                                                warehouseId: e.target.value,
+                                                warehouseId:
+                                                    selectedWarehouseId,
+                                                fromBin: '',
+                                                toBin: '',
                                             });
-                                            fetchFormData(); // Refresh bins for new warehouse
+                                            setBins(
+                                                selectedWarehouse?.bins || []
+                                            );
+                                            // Reset stock when warehouse changes
+                                            setAvailableStock(null);
+                                            setLoadingStock(false);
                                         }}
                                         required
-                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                        disabled={!createForm.itemId}
+                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed'
                                     >
                                         <option value=''>
-                                            Select warehouse...
+                                            {!createForm.itemId
+                                                ? 'Select item first...'
+                                                : warehouses.length === 0
+                                                ? 'No warehouses with stock...'
+                                                : 'Select warehouse...'}
                                         </option>
                                         {warehouses.map((wh) => (
                                             <option key={wh.id} value={wh.id}>
-                                                {wh.name}
+                                                {wh.name}{' '}
+                                                {wh.code ? `(${wh.code})` : ''}
                                             </option>
                                         ))}
                                     </select>
-                                </div>
-
-                                {/* Quantity */}
-                                <div>
-                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                        <svg
-                                            className='w-4 h-4 text-primary-600'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M7 20l4-16m2 16l4-16M6 9h14M4 15h14'
-                                            />
-                                        </svg>
-                                        Quantity *
-                                    </label>
-                                    <input
-                                        type='number'
-                                        value={createForm.quantity}
-                                        onChange={(e) =>
-                                            setCreateForm({
-                                                ...createForm,
-                                                quantity: e.target.value,
-                                            })
-                                        }
-                                        required
-                                        min='1'
-                                        className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
-                                        placeholder='Enter quantity'
-                                    />
-                                    {createForm.type === 'ADJUSTMENT' && (
-                                        <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
-                                            <p className='text-xs text-yellow-800 font-medium'>
-                                                ⚠️ For adjustment, this will be
-                                                the NEW absolute quantity
-                                            </p>
-                                        </div>
-                                    )}
+                                    {createForm.itemId &&
+                                        createForm.type !== 'INBOUND' &&
+                                        createForm.type !== 'RETURN' &&
+                                        warehouses.length === 0 && (
+                                            <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                                                <p className='text-xs text-yellow-800 font-medium'>
+                                                    ⚠️ Selected item has no
+                                                    stock in any warehouse.
+                                                </p>
+                                            </div>
+                                        )}
                                 </div>
 
                                 {/* From Bin (for OUTBOUND, TRANSFER, DAMAGE) */}
@@ -1419,19 +1650,35 @@ export default function MovementsPage() {
                                             required={
                                                 createForm.type === 'TRANSFER'
                                             }
-                                            className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                            disabled={
+                                                !createForm.warehouseId ||
+                                                bins.length === 0
+                                            }
+                                            className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed'
                                         >
                                             <option value=''>
-                                                Select source bin...
+                                                {!createForm.warehouseId
+                                                    ? 'Select warehouse first...'
+                                                    : bins.length === 0
+                                                    ? 'No bins with stock available...'
+                                                    : 'Select source bin...'}
                                             </option>
                                             {bins.map((bin) => (
                                                 <option
                                                     key={bin.id}
                                                     value={bin.code}
                                                 >
-                                                    {bin.code} - {bin.name}{' '}
-                                                    (Available: {bin.currentQty}
-                                                    /{bin.maxCapacity})
+                                                    {bin.code} - {bin.name}
+                                                    {bin.availableQty !==
+                                                    undefined
+                                                        ? ` (Stock: ${bin.availableQty})`
+                                                        : ` (Capacity: ${
+                                                              bin.currentQty ||
+                                                              0
+                                                          }/${
+                                                              bin.maxCapacity ||
+                                                              0
+                                                          })`}
                                                 </option>
                                             ))}
                                         </select>
@@ -1479,24 +1726,320 @@ export default function MovementsPage() {
                                             required={
                                                 createForm.type === 'TRANSFER'
                                             }
-                                            className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900'
+                                            disabled={
+                                                !createForm.warehouseId ||
+                                                bins.length === 0
+                                            }
+                                            className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed'
                                         >
                                             <option value=''>
-                                                Select destination bin...
+                                                {!createForm.warehouseId
+                                                    ? 'Select warehouse first...'
+                                                    : bins.length === 0
+                                                    ? 'No bins available...'
+                                                    : 'Select destination bin...'}
                                             </option>
                                             {bins.map((bin) => (
                                                 <option
                                                     key={bin.id}
                                                     value={bin.code}
                                                 >
-                                                    {bin.code} - {bin.name}{' '}
-                                                    (Available: {bin.currentQty}
-                                                    /{bin.maxCapacity})
+                                                    {bin.code} - {bin.name}
+                                                    {bin.availableQty !==
+                                                    undefined
+                                                        ? ` (Stock: ${bin.availableQty})`
+                                                        : ` (Capacity: ${
+                                                              bin.currentQty ||
+                                                              0
+                                                          }/${
+                                                              bin.maxCapacity ||
+                                                              0
+                                                          })`}
                                                 </option>
                                             ))}
                                         </select>
                                     </div>
                                 )}
+
+                                {/* Quantity */}
+                                <div>
+                                    <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
+                                        <svg
+                                            className='w-4 h-4 text-primary-600'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M7 20l4-16m2 16l4-16M6 9h14M4 15h14'
+                                            />
+                                        </svg>
+                                        Quantity *
+                                        {availableStock !== null && (
+                                            <span className='ml-auto text-xs font-semibold text-slate-600'>
+                                                {loadingStock ? (
+                                                    <span className='text-slate-400'>
+                                                        Loading...
+                                                    </span>
+                                                ) : (
+                                                    <span
+                                                        className={
+                                                            availableStock > 0
+                                                                ? 'text-green-600'
+                                                                : 'text-red-600'
+                                                        }
+                                                    >
+                                                        Available:{' '}
+                                                        {availableStock}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        )}
+                                    </label>
+                                    <input
+                                        type='number'
+                                        value={createForm.quantity}
+                                        onWheel={(e) =>
+                                            (
+                                                e.target as HTMLInputElement
+                                            ).blur()
+                                        }
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            const numValue = parseInt(value);
+                                            // Bin capacity validation (INBOUND/RETURN/TRANSFER)
+                                            if (
+                                                [
+                                                    'INBOUND',
+                                                    'RETURN',
+                                                    'TRANSFER',
+                                                ].includes(createForm.type) &&
+                                                binCapacityInfo &&
+                                                numValue >
+                                                    binCapacityInfo.availableSpace
+                                            ) {
+                                                return; // Block input if exceeds available space
+                                            }
+                                            // ...existing code...
+                                            // Prevent scientific notation and limit input
+                                            if (
+                                                value.includes('e') ||
+                                                value.includes('E')
+                                            ) {
+                                                return; // Block scientific notation
+                                            }
+                                            const numValueFloat =
+                                                parseFloat(value);
+                                            if (
+                                                value !== '' &&
+                                                (isNaN(numValueFloat) ||
+                                                    numValueFloat < 0 ||
+                                                    !Number.isInteger(
+                                                        numValueFloat
+                                                    ))
+                                            ) {
+                                                return;
+                                            }
+                                            const needsStockCheck = [
+                                                'OUTBOUND',
+                                                'TRANSFER',
+                                                'DAMAGE',
+                                                'ADJUSTMENT',
+                                            ].includes(createForm.type);
+                                            if (
+                                                needsStockCheck &&
+                                                availableStock !== null &&
+                                                numValueFloat > availableStock
+                                            ) {
+                                                return;
+                                            }
+                                            setCreateForm({
+                                                ...createForm,
+                                                quantity: value,
+                                            });
+                                        }}
+                                        onInput={(e) => {
+                                            // Only enforce max for stock-dependent movements
+                                            const needsStockCheck = [
+                                                'OUTBOUND',
+                                                'TRANSFER',
+                                                'DAMAGE',
+                                                'ADJUSTMENT',
+                                            ].includes(createForm.type);
+
+                                            // Extra layer: enforce max at input level
+                                            const input =
+                                                e.target as HTMLInputElement;
+                                            const numValue = parseInt(
+                                                input.value
+                                            );
+
+                                            if (
+                                                needsStockCheck &&
+                                                availableStock !== null &&
+                                                numValue > availableStock
+                                            ) {
+                                                input.value =
+                                                    availableStock.toString();
+                                                setCreateForm({
+                                                    ...createForm,
+                                                    quantity:
+                                                        availableStock.toString(),
+                                                });
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            // Prevent 'e', 'E', '+', '-' keys
+                                            if (
+                                                [
+                                                    'e',
+                                                    'E',
+                                                    '+',
+                                                    '-',
+                                                    '.',
+                                                ].includes(e.key)
+                                            ) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        onPaste={(e) => {
+                                            // Prevent pasting non-numeric or scientific notation
+                                            const pastedText =
+                                                e.clipboardData.getData('text');
+                                            if (!/^\d+$/.test(pastedText)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        onBlur={(e) => {
+                                            const value = e.target.value;
+
+                                            // Reset if empty or invalid
+                                            if (!value || value === '0') {
+                                                setCreateForm({
+                                                    ...createForm,
+                                                    quantity: '1',
+                                                });
+                                                return;
+                                            }
+
+                                            const numValue = parseInt(value);
+
+                                            // Only validate on blur for stock-dependent movements
+                                            const needsStockCheck = [
+                                                'OUTBOUND',
+                                                'TRANSFER',
+                                                'DAMAGE',
+                                                'ADJUSTMENT',
+                                            ].includes(createForm.type);
+
+                                            // Validate on blur
+                                            if (
+                                                needsStockCheck &&
+                                                availableStock !== null &&
+                                                numValue > availableStock
+                                            ) {
+                                                alert(
+                                                    `Quantity cannot exceed available stock (${availableStock}). Quantity has been adjusted to maximum available.`
+                                                );
+                                                setCreateForm({
+                                                    ...createForm,
+                                                    quantity:
+                                                        availableStock.toString(),
+                                                });
+                                            }
+                                        }}
+                                        required
+                                        min='1'
+                                        max={
+                                            availableStock !== null &&
+                                            [
+                                                'OUTBOUND',
+                                                'TRANSFER',
+                                                'DAMAGE',
+                                                'ADJUSTMENT',
+                                            ].includes(createForm.type)
+                                                ? availableStock
+                                                : undefined
+                                        }
+                                        step='1'
+                                        pattern='[0-9]*'
+                                        inputMode='numeric'
+                                        className={`w-full px-4 py-3 bg-white border-2 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 ${
+                                            availableStock !== null &&
+                                            [
+                                                'OUTBOUND',
+                                                'TRANSFER',
+                                                'DAMAGE',
+                                                'ADJUSTMENT',
+                                            ].includes(createForm.type) &&
+                                            parseInt(createForm.quantity) >
+                                                availableStock
+                                                ? 'border-red-300 bg-red-50'
+                                                : 'border-slate-200'
+                                        }`}
+                                        placeholder='Enter quantity'
+                                        title={
+                                            availableStock !== null &&
+                                            [
+                                                'OUTBOUND',
+                                                'TRANSFER',
+                                                'DAMAGE',
+                                                'ADJUSTMENT',
+                                            ].includes(createForm.type)
+                                                ? `Maximum available: ${availableStock}`
+                                                : 'Enter the quantity for this movement'
+                                        }
+                                    />
+                                    {createForm.type === 'ADJUSTMENT' && (
+                                        <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                                            <p className='text-xs text-yellow-800 font-medium'>
+                                                ⚠️ For adjustment, this will be
+                                                the NEW absolute quantity
+                                            </p>
+                                        </div>
+                                    )}
+                                    {binCapacityInfo &&
+                                        [
+                                            'INBOUND',
+                                            'RETURN',
+                                            'TRANSFER',
+                                        ].includes(createForm.type) &&
+                                        parseInt(createForm.quantity) >
+                                            binCapacityInfo.availableSpace && (
+                                            <div className='mt-2 p-3 bg-red-50 border border-red-200 rounded-lg'>
+                                                <p className='text-xs text-red-800 font-medium'>
+                                                    ❌ Quantity melebihi
+                                                    kapasitas bin.
+                                                    <br />
+                                                    Maksimum tersedia:{' '}
+                                                    {
+                                                        binCapacityInfo.availableSpace
+                                                    }{' '}
+                                                    (Current:{' '}
+                                                    {binCapacityInfo.currentQty}
+                                                    , Pending:{' '}
+                                                    {binCapacityInfo.pendingQty}
+                                                    , Capacity:{' '}
+                                                    {
+                                                        binCapacityInfo.maxCapacity
+                                                    }
+                                                    )
+                                                </p>
+                                            </div>
+                                        )}
+                                    {availableStock !== null &&
+                                        availableStock === 0 && (
+                                            <div className='mt-2 p-3 bg-red-50 border border-red-200 rounded-lg'>
+                                                <p className='text-xs text-red-800 font-medium'>
+                                                    ❌ No stock available in
+                                                    selected bin
+                                                </p>
+                                            </div>
+                                        )}
+                                </div>
 
                                 {/* Notes */}
                                 <div>
@@ -1534,7 +2077,13 @@ export default function MovementsPage() {
                                 <div className='flex gap-4 pt-6 border-t border-slate-200'>
                                     <button
                                         type='submit'
-                                        disabled={creating}
+                                        disabled={
+                                            creating ||
+                                            (availableStock !== null &&
+                                                (parseInt(createForm.quantity) >
+                                                    availableStock ||
+                                                    availableStock === 0))
+                                        }
                                         className='flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-8 py-3.5 rounded-xl hover:from-primary-700 hover:to-primary-800 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed font-bold shadow-lg hover:shadow-xl transition-all'
                                     >
                                         {creating ? (
@@ -1581,9 +2130,23 @@ export default function MovementsPage() {
                                     </button>
                                     <button
                                         type='button'
-                                        onClick={() =>
-                                            setShowCreateModal(false)
-                                        }
+                                        onClick={() => {
+                                            setCreateForm({
+                                                itemId: '',
+                                                type: 'INBOUND',
+                                                quantity: '',
+                                                warehouseId: '',
+                                                fromBin: '',
+                                                toBin: '',
+                                                notes: '',
+                                            });
+                                            setItems([]);
+                                            setWarehouses([]);
+                                            setBins([]);
+                                            setAvailableStock(null);
+                                            setLoadingStock(false);
+                                            setShowCreateModal(false);
+                                        }}
                                         disabled={creating}
                                         className='px-8 py-3.5 bg-slate-100 border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all'
                                     >
