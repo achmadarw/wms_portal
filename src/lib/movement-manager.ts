@@ -401,36 +401,54 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
                 params.type === 'TRANSFER'
             ) {
                 const currentOccupancy = toBin.currentQty || 0;
-                const maxCapacity = toBin.maxCapacity || 0;
+                const maxCapacity = toBin.maxCapacity;
 
-                // Calculate pending quantities that will be added to this bin
-                const pendingInbound = await prisma.movement.aggregate({
-                    where: {
-                        toBin: params.toBinId,
-                        status: 'PENDING',
-                        type: {
-                            in: ['INBOUND', 'RETURN', 'TRANSFER'],
-                        },
-                    },
-                    _sum: {
-                        quantity: true,
-                    },
+                console.log('[VALIDATE] Bin capacity check:', {
+                    binCode: toBin.code,
+                    binId: toBin.id,
+                    currentOccupancy,
+                    maxCapacity,
+                    requestedQty: params.quantity,
+                    movementType: params.type,
                 });
 
-                const plannedOccupancy =
-                    currentOccupancy + (pendingInbound._sum.quantity || 0);
-                const availableSpace = maxCapacity - plannedOccupancy;
+                // Only validate if bin has a capacity limit (maxCapacity > 0)
+                if (maxCapacity && maxCapacity > 0) {
+                    // Calculate pending quantities that will be added to this bin
+                    const pendingInbound = await prisma.movement.aggregate({
+                        where: {
+                            toBin: params.toBinId,
+                            status: 'PENDING',
+                            type: {
+                                in: ['INBOUND', 'RETURN', 'TRANSFER'],
+                            },
+                        },
+                        _sum: {
+                            quantity: true,
+                        },
+                    });
 
-                if (params.quantity > availableSpace) {
-                    errors.push(
-                        `Destination bin "${toBin.code}" has insufficient capacity. ` +
+                    const pendingQty = pendingInbound._sum.quantity || 0;
+                    const plannedOccupancy = currentOccupancy + pendingQty;
+                    const availableSpace = maxCapacity - plannedOccupancy;
+
+                    console.log('[VALIDATE] Capacity calculation:', {
+                        pendingQty,
+                        plannedOccupancy,
+                        availableSpace,
+                        willExceed: params.quantity > availableSpace,
+                    });
+
+                    if (params.quantity > availableSpace) {
+                        const errorMsg =
+                            `Destination bin "${toBin.code}" has insufficient capacity. ` +
                             `Available space: ${availableSpace} units, ` +
                             `Required: ${params.quantity} units, ` +
                             `Current occupancy: ${currentOccupancy}/${maxCapacity}` +
-                            (pendingInbound._sum.quantity
-                                ? `, Pending: ${pendingInbound._sum.quantity}`
-                                : '')
-                    );
+                            (pendingQty > 0 ? `, Pending: ${pendingQty}` : '');
+                        console.log('[VALIDATE] Capacity error:', errorMsg);
+                        errors.push(errorMsg);
+                    }
                 }
             }
         }

@@ -186,14 +186,32 @@ export async function POST(request: NextRequest) {
             const bin = await prisma.bin.findFirst({
                 where: { code: fromBin, warehouseId: warehouseId },
             });
-            if (bin) finalFromBinId = bin.id;
+            if (bin) {
+                finalFromBinId = bin.id;
+                console.log('[DEBUG] Converted fromBin code to ID:', {
+                    code: fromBin,
+                    id: bin.id,
+                });
+            } else {
+                console.log('[DEBUG] fromBin not found:', fromBin);
+            }
         }
 
         if (toBin && !toBinId) {
             const bin = await prisma.bin.findFirst({
                 where: { code: toBin, warehouseId: warehouseId },
             });
-            if (bin) finalToBinId = bin.id;
+            if (bin) {
+                finalToBinId = bin.id;
+                console.log('[DEBUG] Converted toBin code to ID:', {
+                    code: toBin,
+                    id: bin.id,
+                    maxCapacity: bin.maxCapacity,
+                    currentQty: bin.currentQty,
+                });
+            } else {
+                console.log('[DEBUG] toBin not found:', toBin);
+            }
         }
 
         if (!inventoryItemId && itemId) {
@@ -312,6 +330,16 @@ export async function POST(request: NextRequest) {
             toBinId: finalToBinId,
             notes,
             createdById: user.userId,
+        });
+
+        console.log('[DEBUG] Validation result:', {
+            valid: validation.valid,
+            errors: validation.errors,
+            params: {
+                type,
+                quantity,
+                toBinId: finalToBinId,
+            },
         });
 
         if (!validation.valid) {
