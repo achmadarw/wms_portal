@@ -11,6 +11,8 @@ import {
     Filter,
     Download,
 } from 'lucide-react';
+import Pagination from '@/components/Pagination';
+import { withProgress } from '@/lib/progress';
 
 interface InventoryItem {
     id: string;
@@ -89,6 +91,11 @@ export default function InventoryPage() {
         inStock: 0,
     });
     const [loading, setLoading] = useState(true);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const [filters, setFilters] = useState({
         warehouseId: '',
         categoryId: '',
@@ -112,6 +119,7 @@ export default function InventoryPage() {
     }, [router]);
 
     useEffect(() => {
+        setCurrentPage(1); // Reset to first page when filters change
         fetchInventory();
     }, [filters]);
 
@@ -224,6 +232,12 @@ export default function InventoryPage() {
             search: '',
         });
     };
+
+    // Pagination calculations
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedItems = items.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(items.length / itemsPerPage);
 
     return (
         <div className='space-y-6'>
@@ -543,7 +557,7 @@ export default function InventoryPage() {
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200'>
-                                {items.map((item) => {
+                                {paginatedItems.map((item) => {
                                     const status = getStockStatus(item);
                                     const StatusIcon = status.icon;
                                     return (
@@ -635,6 +649,18 @@ export default function InventoryPage() {
                                 })}
                             </tbody>
                         </table>
+
+                        {/* Pagination */}
+                        {items.length > 0 && (
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={items.length}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={setCurrentPage}
+                                onItemsPerPageChange={setItemsPerPage}
+                            />
+                        )}
                     </div>
                 )}
             </div>

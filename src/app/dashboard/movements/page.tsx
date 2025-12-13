@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@/components/Alert';
 import { useAlert } from '@/hooks/useAlert';
+import Pagination from '@/components/Pagination';
+import { withProgress } from '@/lib/progress';
 
 interface Movement {
     id: string;
@@ -75,6 +77,11 @@ export default function MovementsPage() {
     const [movements, setMovements] = useState<Movement[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const [filters, setFilters] = useState({
         type: '',
         status: '',
@@ -612,118 +619,129 @@ export default function MovementsPage() {
         e.preventDefault();
         setCreating(true);
 
-        try {
-            const token = localStorage.getItem('accessToken');
+        await withProgress(async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
 
-            // For ADJUSTMENT, toBin should be the same as fromBin
-            const adjustedToBin =
-                createForm.type === 'ADJUSTMENT' && createForm.fromBin
-                    ? createForm.fromBin
-                    : createForm.toBin;
+                // For ADJUSTMENT, toBin should be the same as fromBin
+                const adjustedToBin =
+                    createForm.type === 'ADJUSTMENT' && createForm.fromBin
+                        ? createForm.fromBin
+                        : createForm.toBin;
 
-            // For ADJUSTMENT, calculate the absolute quantity from relative input
-            let finalQuantity = parseInt(createForm.quantity);
-            if (createForm.type === 'ADJUSTMENT' && binCapacityInfo) {
-                const inputValue = createForm.quantity;
-                console.log('[ADJUSTMENT FRONTEND] Input received:', {
-                    inputValue,
-                    currentQty: binCapacityInfo.currentQty,
-                    isRelative:
+                // For ADJUSTMENT, calculate the absolute quantity from relative input
+                let finalQuantity = parseInt(createForm.quantity);
+                if (createForm.type === 'ADJUSTMENT' && binCapacityInfo) {
+                    const inputValue = createForm.quantity;
+                    console.log('[ADJUSTMENT FRONTEND] Input received:', {
+                        inputValue,
+                        currentQty: binCapacityInfo.currentQty,
+                        isRelative:
+                            inputValue.startsWith('+') ||
+                            inputValue.startsWith('-'),
+                    });
+
+                    if (
                         inputValue.startsWith('+') ||
-                        inputValue.startsWith('-'),
+                        inputValue.startsWith('-')
+                    ) {
+                        // Relative adjustment - convert to absolute
+                        const adjustment = parseInt(inputValue);
+                        finalQuantity = binCapacityInfo.currentQty + adjustment;
+                        console.log(
+                            '[ADJUSTMENT FRONTEND] Converting relative to absolute:',
+                            {
+                                input: inputValue,
+                                currentQty: binCapacityInfo.currentQty,
+                                adjustment,
+                                finalQuantity,
+                            }
+                        );
+                    } else {
+                        // Absolute value
+                        finalQuantity = parseInt(inputValue);
+                        console.log(
+                            '[ADJUSTMENT FRONTEND] Using absolute value:',
+                            {
+                                input: inputValue,
+                                finalQuantity,
+                            }
+                        );
+                    }
+                }
+
+                const requestBody = {
+                    itemId: createForm.itemId,
+                    type: createForm.type,
+                    quantity: finalQuantity,
+                    warehouseId: createForm.warehouseId,
+                    fromBin: createForm.fromBin || undefined,
+                    toBin: adjustedToBin || undefined,
+                    notes: createForm.notes || undefined,
+                };
+
+                console.log(
+                    '[DEBUG] Creating movement with data:',
+                    requestBody
+                );
+
+                const response = await fetch('/api/movements', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(requestBody),
                 });
 
-                if (inputValue.startsWith('+') || inputValue.startsWith('-')) {
-                    // Relative adjustment - convert to absolute
-                    const adjustment = parseInt(inputValue);
-                    finalQuantity = binCapacityInfo.currentQty + adjustment;
-                    console.log(
-                        '[ADJUSTMENT FRONTEND] Converting relative to absolute:',
-                        {
-                            input: inputValue,
-                            currentQty: binCapacityInfo.currentQty,
-                            adjustment,
-                            finalQuantity,
-                        }
-                    );
-                } else {
-                    // Absolute value
-                    finalQuantity = parseInt(inputValue);
-                    console.log('[ADJUSTMENT FRONTEND] Using absolute value:', {
-                        input: inputValue,
-                        finalQuantity,
-                    });
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    return;
                 }
-            }
 
-            const requestBody = {
-                itemId: createForm.itemId,
-                type: createForm.type,
-                quantity: finalQuantity,
-                warehouseId: createForm.warehouseId,
-                fromBin: createForm.fromBin || undefined,
-                toBin: adjustedToBin || undefined,
-                notes: createForm.notes || undefined,
-            };
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    const errorMessage =
+                        error.error ||
+                        `Failed to create movement: ${response.status}`;
+                    showError(errorMessage, 'Gagal Membuat Movement');
+                    return;
+                }
 
-            console.log('[DEBUG] Creating movement with data:', requestBody);
-
-            const response = await fetch('/api/movements', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (response.status === 401) {
-                handleUnauthorized();
-                return;
-            }
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                const errorMessage =
-                    error.error ||
-                    `Failed to create movement: ${response.status}`;
-                showError(errorMessage, 'Gagal Membuat Movement');
-                return;
-            }
-
-            const result = await response.json();
-            showSuccess(
-                `Movement berhasil dibuat!
+                const result = await response.json();
+                showSuccess(
+                    `Movement berhasil dibuat!
 
 Reference: ${result.movement.referenceNo}`,
-                'Berhasil'
-            );
+                    'Berhasil'
+                );
 
-            // Reset form and close modal
-            setCreateForm({
-                itemId: '',
-                type: 'INBOUND',
-                quantity: '',
-                warehouseId: '',
-                fromBin: '',
-                toBin: '',
-                notes: '',
-            });
-            setAvailableStock(null);
-            setShowCreateModal(false);
+                // Reset form and close modal
+                setCreateForm({
+                    itemId: '',
+                    type: 'INBOUND',
+                    quantity: '',
+                    warehouseId: '',
+                    fromBin: '',
+                    toBin: '',
+                    notes: '',
+                });
+                setAvailableStock(null);
+                setShowCreateModal(false);
 
-            // Refresh movements list
-            fetchMovements();
-        } catch (error: any) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'Error creating movement';
-            showError(errorMessage, 'Error');
-            console.error('[API] Error creating movement:', error);
-        } finally {
-            setCreating(false);
-        }
+                // Refresh movements list
+                fetchMovements();
+            } catch (error: any) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Error creating movement';
+                showError(errorMessage, 'Error');
+                console.error('[API] Error creating movement:', error);
+            } finally {
+                setCreating(false);
+            }
+        });
     };
 
     const handleProcessMovement = async (movementId: string) => {
@@ -861,6 +879,12 @@ Reference: ${result.movement.referenceNo}`,
             minute: '2-digit',
         });
     };
+
+    // Pagination calculations
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedMovements = movements.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(movements.length / itemsPerPage);
 
     if (loading) {
         return (
@@ -1245,7 +1269,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </tr>
                             </thead>
                             <tbody className='bg-white divide-y divide-slate-100'>
-                                {movements.length === 0 ? (
+                                {paginatedMovements.length === 0 ? (
                                     <tr>
                                         <td
                                             colSpan={8}
@@ -1275,7 +1299,7 @@ Reference: ${result.movement.referenceNo}`,
                                         </td>
                                     </tr>
                                 ) : (
-                                    movements.map((movement) => (
+                                    paginatedMovements.map((movement) => (
                                         <tr
                                             key={movement.id}
                                             className='hover:bg-slate-50 transition-colors'
@@ -1587,6 +1611,20 @@ Reference: ${result.movement.referenceNo}`,
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination */}
+                    {movements.length > 0 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={Math.ceil(
+                                movements.length / itemsPerPage
+                            )}
+                            totalItems={movements.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={setItemsPerPage}
+                        />
+                    )}
                 </div>
 
                 {/* Create Movement Modal */}
