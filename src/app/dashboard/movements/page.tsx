@@ -45,6 +45,8 @@ interface Stats {
     outbound: number;
     adjustments: number;
     transfers: number;
+    damage: number;
+    returns: number;
     totalQuantityIn: number;
     totalQuantityOut: number;
 }
@@ -541,6 +543,8 @@ export default function MovementsPage() {
                     outbound: 0,
                     adjustments: 0,
                     transfers: 0,
+                    damage: 0,
+                    returns: 0,
                     totalQuantityIn: 0,
                     totalQuantityOut: 0,
                 }
@@ -554,6 +558,8 @@ export default function MovementsPage() {
                 outbound: 0,
                 adjustments: 0,
                 transfers: 0,
+                damage: 0,
+                returns: 0,
                 totalQuantityIn: 0,
                 totalQuantityOut: 0,
             });
@@ -973,38 +979,92 @@ Reference: ${result.movement.referenceNo}`,
 
                 {/* Stats Cards */}
                 {stats && (
-                    <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
-                        <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
-                            <div className='flex items-center justify-between'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
+                        {/* Total Movements - Spans 2 rows */}
+                        <div className='bg-gradient-to-br from-primary-600 to-primary-700 p-6 rounded-2xl shadow-xl border-2 border-primary-500 hover:shadow-2xl transition-all lg:row-span-2'>
+                            <div className='flex flex-col h-full justify-between'>
                                 <div>
-                                    <div className='text-sm font-semibold text-slate-600'>
-                                        Total Movements
+                                    <div className='flex items-center gap-2 mb-3'>
+                                        <div className='w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center'>
+                                            <svg
+                                                className='w-7 h-7 text-white'
+                                                fill='none'
+                                                stroke='currentColor'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className='text-sm font-bold text-primary-100 uppercase tracking-wider'>
+                                            Total Movements
+                                        </div>
                                     </div>
-                                    <div className='text-3xl font-bold text-slate-900 mt-2'>
+                                    <div className='text-6xl font-bold text-white mt-4 mb-3'>
                                         {stats?.totalMovements || 0}
                                     </div>
-                                </div>
-                                <div className='w-14 h-14 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center shadow-lg'>
-                                    <svg
-                                        className='w-8 h-8 text-white'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
-                                        />
-                                    </svg>
+                                    <div className='text-sm text-primary-100 mb-4'>
+                                        All transaction types across warehouses
+                                    </div>
+                                    <div className='space-y-2 pt-4 border-t border-white/20'>
+                                        <div className='flex justify-between items-center text-xs'>
+                                            <span className='text-primary-100 font-medium'>
+                                                Total In:
+                                            </span>
+                                            <span className='text-white font-bold'>
+                                                +
+                                                {(
+                                                    stats?.totalQuantityIn || 0
+                                                ).toLocaleString()}{' '}
+                                                units
+                                            </span>
+                                        </div>
+                                        <div className='flex justify-between items-center text-xs'>
+                                            <span className='text-primary-100 font-medium'>
+                                                Total Out:
+                                            </span>
+                                            <span className='text-white font-bold'>
+                                                -
+                                                {(
+                                                    stats?.totalQuantityOut || 0
+                                                ).toLocaleString()}{' '}
+                                                units
+                                            </span>
+                                        </div>
+                                        <div className='flex justify-between items-center text-xs pt-2 border-t border-white/20'>
+                                            <span className='text-primary-100 font-medium'>
+                                                Net Change:
+                                            </span>
+                                            <span className='text-white font-bold'>
+                                                {(stats?.totalQuantityIn || 0) -
+                                                    (stats?.totalQuantityOut ||
+                                                        0) >=
+                                                0
+                                                    ? '+'
+                                                    : ''}
+                                                {(
+                                                    (stats?.totalQuantityIn ||
+                                                        0) -
+                                                    (stats?.totalQuantityOut ||
+                                                        0)
+                                                ).toLocaleString()}{' '}
+                                                units
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
-                            <div className='flex items-center justify-between'>
+
+                        {/* Inbound */}
+                        <div className='bg-white p-5 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all hover:border-green-300'>
+                            <div className='flex flex-col h-full justify-between'>
                                 <div>
-                                    <div className='text-sm font-semibold text-slate-600'>
+                                    <div className='text-xs font-bold text-slate-600 uppercase tracking-wide'>
                                         Inbound
                                     </div>
                                     <div className='text-3xl font-bold text-green-600 mt-2'>
@@ -1018,27 +1078,31 @@ Reference: ${result.movement.referenceNo}`,
                                         units
                                     </div>
                                 </div>
-                                <div className='w-14 h-14 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg'>
-                                    <svg
-                                        className='w-8 h-8 text-white'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                                        />
-                                    </svg>
+                                <div className='flex justify-end mt-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow'>
+                                        <svg
+                                            className='w-5 h-5 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
+                                            />
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
-                            <div className='flex items-center justify-between'>
+
+                        {/* Outbound */}
+                        <div className='bg-white p-5 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all hover:border-red-300'>
+                            <div className='flex flex-col h-full justify-between'>
                                 <div>
-                                    <div className='text-sm font-semibold text-slate-600'>
+                                    <div className='text-xs font-bold text-slate-600 uppercase tracking-wide'>
                                         Outbound
                                     </div>
                                     <div className='text-3xl font-bold text-red-600 mt-2'>
@@ -1052,50 +1116,158 @@ Reference: ${result.movement.referenceNo}`,
                                         units
                                     </div>
                                 </div>
-                                <div className='w-14 h-14 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg'>
-                                    <svg
-                                        className='w-8 h-8 text-white'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                                        />
-                                    </svg>
+                                <div className='flex justify-end mt-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center shadow'>
+                                        <svg
+                                            className='w-5 h-5 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M17 8V4m0 0l-4 4m4-4l4 4m-6 4v12m0 0l-4-4m4 4l4-4'
+                                            />
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
-                            <div className='flex items-center justify-between'>
+
+                        {/* Transfer */}
+                        <div className='bg-white p-5 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all hover:border-blue-300'>
+                            <div className='flex flex-col h-full justify-between'>
                                 <div>
-                                    <div className='text-sm font-semibold text-slate-600'>
-                                        Transfers
+                                    <div className='text-xs font-bold text-slate-600 uppercase tracking-wide'>
+                                        Transfer
                                     </div>
                                     <div className='text-3xl font-bold text-blue-600 mt-2'>
                                         {stats?.transfers || 0}
                                     </div>
                                     <div className='text-xs text-slate-500 mt-1 font-medium'>
-                                        {stats?.adjustments || 0} adjustments
+                                        Bin movements
                                     </div>
                                 </div>
-                                <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg'>
-                                    <svg
-                                        className='w-8 h-8 text-white'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                                        />
-                                    </svg>
+                                <div className='flex justify-end mt-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow'>
+                                        <svg
+                                            className='w-5 h-5 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Adjustment */}
+                        <div className='bg-white p-5 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all hover:border-amber-300'>
+                            <div className='flex flex-col h-full justify-between'>
+                                <div>
+                                    <div className='text-xs font-bold text-slate-600 uppercase tracking-wide'>
+                                        Adjustment
+                                    </div>
+                                    <div className='text-3xl font-bold text-amber-600 mt-2'>
+                                        {stats?.adjustments || 0}
+                                    </div>
+                                    <div className='text-xs text-slate-500 mt-1 font-medium'>
+                                        Stock corrections
+                                    </div>
+                                </div>
+                                <div className='flex justify-end mt-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-lg flex items-center justify-center shadow'>
+                                        <svg
+                                            className='w-5 h-5 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Damage */}
+                        <div className='bg-white p-5 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all hover:border-orange-300'>
+                            <div className='flex flex-col h-full justify-between'>
+                                <div>
+                                    <div className='text-xs font-bold text-slate-600 uppercase tracking-wide'>
+                                        Damage
+                                    </div>
+                                    <div className='text-3xl font-bold text-orange-600 mt-2'>
+                                        {stats?.damage || 0}
+                                    </div>
+                                    <div className='text-xs text-slate-500 mt-1 font-medium'>
+                                        Damaged items
+                                    </div>
+                                </div>
+                                <div className='flex justify-end mt-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center shadow'>
+                                        <svg
+                                            className='w-5 h-5 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Return */}
+                        <div className='bg-white p-5 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all hover:border-purple-300'>
+                            <div className='flex flex-col h-full justify-between'>
+                                <div>
+                                    <div className='text-xs font-bold text-slate-600 uppercase tracking-wide'>
+                                        Return
+                                    </div>
+                                    <div className='text-3xl font-bold text-purple-600 mt-2'>
+                                        {stats?.returns || 0}
+                                    </div>
+                                    <div className='text-xs text-slate-500 mt-1 font-medium'>
+                                        Returned items
+                                    </div>
+                                </div>
+                                <div className='flex justify-end mt-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center shadow'>
+                                        <svg
+                                            className='w-5 h-5 text-white'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth={2}
+                                                d='M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6'
+                                            />
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -112,12 +112,14 @@ export async function GET(request: NextRequest) {
         // Transform summary to match frontend Stats interface
         const stats = {
             totalMovements: summary.total,
-            inbound: summary.byType.INBOUND || 0,
-            outbound: summary.byType.OUTBOUND || 0,
-            adjustments: summary.byType.ADJUSTMENT || 0,
-            transfers: summary.byType.TRANSFER || 0,
-            totalQuantityIn: summary.quantities.totalIn,
-            totalQuantityOut: summary.quantities.totalOut,
+            inbound: summary.byType.inbound || 0,
+            outbound: summary.byType.outbound || 0,
+            adjustments: summary.byType.adjustment || 0,
+            transfers: summary.byType.transfer || 0,
+            damage: summary.byType.damage || 0,
+            returns: summary.byType.return || 0,
+            totalQuantityIn: summary.quantities.inbound || 0,
+            totalQuantityOut: summary.quantities.outbound || 0,
         };
 
         return NextResponse.json({
