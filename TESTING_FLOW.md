@@ -747,18 +747,23 @@ SUPERVISOR reviews → Clicks "Process" → Status: COMPLETED → Inventory upda
     - Reference Number: ADJ-2025-12-08-001
     - Warehouse: Gudang Pusat Jakarta
     - Item: iPhone 15 Pro (PHONE-APL-001)
-    - Bin: C-01-01
-    - Quantity: -2 (minus 2 untuk mengurangi)
-    - Notes: Stock opname correction - shortage found
+    - Bin: C-01-01 _(REQUIRED - pilih bin yang akan di-adjust)_
+    - Quantity: **33** _(New total quantity - ABSOLUTE VALUE, bukan delta)_
+    - Notes: Stock opname correction - shortage found (Physical count: 33, System: 35)
 5. Save & Process
+
+**💡 IMPORTANT**: ADJUSTMENT menggunakan **ABSOLUTE quantity** (set quantity = X), bukan delta (±X).
+
+-   Jika current qty = 35 dan physical count = 33, input **33** (bukan -2)
+-   Jika current qty = 10 dan physical count = 15, input **15** (bukan +5)
 
 #### Test 8.3 - Verify Adjustment
 
 1. Check inventory iPhone di C-01-01
 2. **Verify:**
-    - Quantity berkurang 2 pcs
-    - Total sekarang: 33 pcs
-    - Notes/history mencatat adjustment
+    - Quantity sekarang adalah **33 pcs** (absolute value yang di-input)
+    - Available qty juga berubah menjadi **33 pcs**
+    - Notes/history mencatat adjustment dengan quantity baru
 
 ---
 

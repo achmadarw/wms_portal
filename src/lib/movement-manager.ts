@@ -58,11 +58,20 @@ export async function createMovement(
     } = params;
 
     try {
-        // Validate quantity
-        if (quantity <= 0) {
+        // Validate quantity (for ADJUSTMENT, this is the target absolute value)
+        if (type !== 'ADJUSTMENT' && quantity <= 0) {
             return {
                 success: false,
                 message: 'Quantity must be greater than 0',
+                error: 'INVALID_QUANTITY',
+            };
+        }
+
+        // For ADJUSTMENT, quantity must be non-negative (can be 0)
+        if (type === 'ADJUSTMENT' && quantity < 0) {
+            return {
+                success: false,
+                message: 'Adjustment target quantity cannot be negative',
                 error: 'INVALID_QUANTITY',
             };
         }
@@ -99,13 +108,27 @@ export async function createMovement(
         // Generate reference number
         const referenceNo = generateMovementReferenceNo(type);
 
+        // For ADJUSTMENT, store the delta (change) instead of absolute value
+        let movementQuantity = quantity;
+        if (type === 'ADJUSTMENT') {
+            const currentQty = inventoryItem.quantity;
+            movementQuantity = quantity - currentQty; // Store the delta
+            console.log('[ADJUSTMENT CREATE] Storing delta:', {
+                currentQty,
+                targetAbsoluteQty: quantity,
+                delta: movementQuantity,
+                itemId: inventoryItemId,
+                binId: toBinId,
+            });
+        }
+
         // Create movement record with PENDING status
         // Inventory will be updated when movement is processed (status changed to COMPLETED)
         const movement = await prisma.movement.create({
             data: {
                 referenceNo,
                 type,
-                quantity,
+                quantity: movementQuantity,
                 warehouseId,
                 itemId: inventoryItemId,
                 fromBin: fromBinId,
@@ -338,17 +361,36 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
 
         case 'ADJUSTMENT':
             // Adjustment requires existing inventory record
-            if (item.quantity === 0 && params.quantity === 0) {
+            const currentQty = item.quantity;
+            const newQty = params.quantity; // This is the target absolute quantity
+
+            if (currentQty === 0 && newQty === 0) {
                 errors.push(
                     `Cannot adjust inventory for item "${item.itemMaster.name}" with zero quantity. Use INBOUND to receive items first.`
                 );
             }
 
-            // Validate adjustment quantity is reasonable
-            if (params.quantity < 0) {
+            // Validate new quantity is not negative
+            if (newQty < 0) {
                 errors.push(
-                    'Adjustment quantity cannot be negative. Use positive number for the new total quantity.'
+                    'Adjustment target quantity cannot be negative. Use 0 or positive number for the new total quantity.'
                 );
+            }
+
+            // Validate new quantity doesn't exceed bin capacity
+            if (params.toBinId) {
+                const toBin = await prisma.bin.findUnique({
+                    where: { id: params.toBinId },
+                });
+                if (
+                    toBin &&
+                    toBin.maxCapacity > 0 &&
+                    newQty > toBin.maxCapacity
+                ) {
+                    errors.push(
+                        `Adjustment target quantity (${newQty}) exceeds bin capacity (${toBin.maxCapacity})`
+                    );
+                }
             }
             break;
 
@@ -579,25 +621,160 @@ export async function processMovement(
                     break;
 
                 case 'ADJUSTMENT':
-                    // Adjustment sets absolute quantity
+                    // For ADJUSTMENT, quantity stored is the delta (change amount)
+                    const quantityDelta = quantity; // This is already the delta
+                    const oldQuantity = inventoryItem.quantity;
+                    const newQuantity = oldQuantity + quantityDelta;
+
+                    console.log('[ADJUSTMENT PROCESS] Processing adjustment:', {
+                        movementId,
+                        referenceNo: movement.referenceNo,
+                        oldQuantity,
+                        quantityDelta,
+                        newQuantity,
+                        toBin,
+                        itemId: inventoryItem.id,
+                    });
+
                     await tx.inventoryItem.update({
                         where: { id: inventoryItem.id },
                         data: {
-                            quantity,
-                            availableQty: quantity,
+                            quantity: newQuantity,
+                            availableQty: newQuantity,
                         },
                     });
+
+                    console.log(
+                        '[ADJUSTMENT PROCESS] Inventory updated to:',
+                        newQuantity
+                    );
+
+                    // Update bin quantity based on the delta
+                    if (toBin && quantityDelta !== 0) {
+                        const binUpdateData =
+                            quantityDelta > 0
+                                ? { increment: quantityDelta }
+                                : { decrement: Math.abs(quantityDelta) };
+
+                        console.log(
+                            '[ADJUSTMENT PROCESS] Updating bin quantity:',
+                            {
+                                binId: toBin,
+                                binUpdateData,
+                                willIncrement: quantityDelta > 0,
+                                amount: Math.abs(quantityDelta),
+                            }
+                        );
+
+                        await tx.bin.update({
+                            where: { id: toBin },
+                            data: {
+                                currentQty: binUpdateData,
+                            },
+                        });
+
+                        // Verify bin update
+                        const updatedBin = await tx.bin.findUnique({
+                            where: { id: toBin },
+                        });
+
+                        console.log(
+                            '[ADJUSTMENT PROCESS] Bin quantity updated successfully:',
+                            {
+                                binId: toBin,
+                                newBinQty: updatedBin?.currentQty,
+                            }
+                        );
+                    } else {
+                        console.log('[ADJUSTMENT] Skipping bin update:', {
+                            toBin,
+                            quantityDelta,
+                        });
+                    }
                     break;
 
                 case 'TRANSFER':
-                    // Transfer doesn't change total quantity, just location
-                    if (toBin && toBin !== inventoryItem.binId) {
-                        await tx.inventoryItem.update({
-                            where: { id: inventoryItem.id },
-                            data: {
-                                binId: toBin,
-                            },
+                    // Transfer moves inventory from one bin to another
+                    if (toBin && fromBin && toBin !== fromBin) {
+                        console.log('[TRANSFER] Processing transfer:', {
+                            itemId: inventoryItem.id,
+                            itemMasterId: inventoryItem.itemMasterId,
+                            warehouseId: inventoryItem.warehouseId,
+                            fromBin,
+                            toBin,
+                            quantity,
                         });
+
+                        // Check if destination bin already has this item
+                        const destinationItem =
+                            await tx.inventoryItem.findFirst({
+                                where: {
+                                    itemMasterId: inventoryItem.itemMasterId,
+                                    warehouseId: inventoryItem.warehouseId,
+                                    binId: toBin,
+                                },
+                            });
+
+                        if (destinationItem) {
+                            // Destination already has this item - increment quantity
+                            console.log(
+                                '[TRANSFER] Destination item exists, incrementing quantity'
+                            );
+                            await tx.inventoryItem.update({
+                                where: { id: destinationItem.id },
+                                data: {
+                                    quantity: {
+                                        increment: quantity,
+                                    },
+                                    availableQty: {
+                                        increment: quantity,
+                                    },
+                                },
+                            });
+                        } else {
+                            // Destination doesn't have this item - create new inventory record
+                            console.log(
+                                '[TRANSFER] Destination item does not exist, creating new'
+                            );
+                            await tx.inventoryItem.create({
+                                data: {
+                                    itemMasterId: inventoryItem.itemMasterId,
+                                    warehouseId: inventoryItem.warehouseId,
+                                    binId: toBin,
+                                    quantity: quantity,
+                                    availableQty: quantity,
+                                    reservedQty: 0,
+                                },
+                            });
+                        }
+
+                        // Decrement quantity from source bin
+                        console.log(
+                            '[TRANSFER] Decrementing quantity from source bin'
+                        );
+                        const updatedSourceItem = await tx.inventoryItem.update(
+                            {
+                                where: { id: inventoryItem.id },
+                                data: {
+                                    quantity: {
+                                        decrement: quantity,
+                                    },
+                                    availableQty: {
+                                        decrement: quantity,
+                                    },
+                                },
+                            }
+                        );
+
+                        // If source bin quantity becomes 0, optionally delete it to clean up
+                        // (or keep it for history - your choice)
+                        if (updatedSourceItem.quantity === 0) {
+                            console.log(
+                                '[TRANSFER] Source bin quantity is now 0'
+                            );
+                            // Keep the record with 0 quantity for audit trail
+                            // await tx.inventoryItem.delete({ where: { id: inventoryItem.id } });
+                        }
                     }
                     break;
 

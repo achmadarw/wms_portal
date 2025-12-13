@@ -272,12 +272,9 @@ export default function MovementsPage() {
     // Fetch available stock when item and warehouse are selected (for OUTBOUND/TRANSFER/DAMAGE)
     useEffect(() => {
         const fetchTotalAvailableStock = async () => {
-            const needsStockCheck = [
-                'OUTBOUND',
-                'TRANSFER',
-                'DAMAGE',
-                'ADJUSTMENT',
-            ].includes(createForm.type);
+            const needsStockCheck = ['OUTBOUND', 'TRANSFER', 'DAMAGE'].includes(
+                createForm.type
+            );
 
             if (
                 needsStockCheck &&
@@ -351,15 +348,23 @@ export default function MovementsPage() {
     // Fetch bin capacity info when toBin changes (for INBOUND/RETURN/TRANSFER)
     useEffect(() => {
         const fetchBinCapacityInfo = async () => {
+            // For ADJUSTMENT, use fromBin instead of toBin
+            const binToCheck =
+                createForm.type === 'ADJUSTMENT'
+                    ? createForm.fromBin
+                    : createForm.toBin;
+
             if (
-                ['INBOUND', 'RETURN', 'TRANSFER'].includes(createForm.type) &&
-                createForm.toBin &&
+                ['INBOUND', 'RETURN', 'TRANSFER', 'ADJUSTMENT'].includes(
+                    createForm.type
+                ) &&
+                binToCheck &&
                 createForm.warehouseId
             ) {
                 try {
                     const token = localStorage.getItem('accessToken');
                     const res = await fetch(
-                        `/api/bins/capacity?binCode=${createForm.toBin}&warehouseId=${createForm.warehouseId}`,
+                        `/api/bins/capacity?binCode=${binToCheck}&warehouseId=${createForm.warehouseId}`,
                         {
                             headers: { Authorization: `Bearer ${token}` },
                         }
@@ -390,7 +395,12 @@ export default function MovementsPage() {
             }
         };
         fetchBinCapacityInfo();
-    }, [createForm.toBin, createForm.warehouseId, createForm.type]);
+    }, [
+        createForm.toBin,
+        createForm.fromBin,
+        createForm.warehouseId,
+        createForm.type,
+    ]);
 
     const fetchMovements = async () => {
         try {
@@ -513,13 +523,54 @@ export default function MovementsPage() {
         try {
             const token = localStorage.getItem('accessToken');
 
+            // For ADJUSTMENT, toBin should be the same as fromBin
+            const adjustedToBin =
+                createForm.type === 'ADJUSTMENT' && createForm.fromBin
+                    ? createForm.fromBin
+                    : createForm.toBin;
+
+            // For ADJUSTMENT, calculate the absolute quantity from relative input
+            let finalQuantity = parseInt(createForm.quantity);
+            if (createForm.type === 'ADJUSTMENT' && binCapacityInfo) {
+                const inputValue = createForm.quantity;
+                console.log('[ADJUSTMENT FRONTEND] Input received:', {
+                    inputValue,
+                    currentQty: binCapacityInfo.currentQty,
+                    isRelative:
+                        inputValue.startsWith('+') ||
+                        inputValue.startsWith('-'),
+                });
+
+                if (inputValue.startsWith('+') || inputValue.startsWith('-')) {
+                    // Relative adjustment - convert to absolute
+                    const adjustment = parseInt(inputValue);
+                    finalQuantity = binCapacityInfo.currentQty + adjustment;
+                    console.log(
+                        '[ADJUSTMENT FRONTEND] Converting relative to absolute:',
+                        {
+                            input: inputValue,
+                            currentQty: binCapacityInfo.currentQty,
+                            adjustment,
+                            finalQuantity,
+                        }
+                    );
+                } else {
+                    // Absolute value
+                    finalQuantity = parseInt(inputValue);
+                    console.log('[ADJUSTMENT FRONTEND] Using absolute value:', {
+                        input: inputValue,
+                        finalQuantity,
+                    });
+                }
+            }
+
             const requestBody = {
                 itemId: createForm.itemId,
                 type: createForm.type,
-                quantity: parseInt(createForm.quantity),
+                quantity: finalQuantity,
                 warehouseId: createForm.warehouseId,
                 fromBin: createForm.fromBin || undefined,
-                toBin: createForm.toBin || undefined,
+                toBin: adjustedToBin || undefined,
                 notes: createForm.notes || undefined,
             };
 
@@ -1239,13 +1290,15 @@ Reference: ${result.movement.referenceNo}`,
                                                             movement.quantity >
                                                             0
                                                                 ? 'text-green-600'
-                                                                : 'text-red-600'
+                                                                : movement.quantity <
+                                                                  0
+                                                                ? 'text-red-600'
+                                                                : 'text-slate-600'
                                                         }`}
                                                     >
                                                         {movement.quantity > 0
-                                                            ? '+'
-                                                            : ''}
-                                                        {movement.quantity}
+                                                            ? `+${movement.quantity}`
+                                                            : movement.quantity}
                                                     </span>
                                                     <span className='text-xs text-slate-500 font-medium'>
                                                         {
@@ -1750,11 +1803,12 @@ Reference: ${result.movement.referenceNo}`,
                                             )}
                                     </div>
 
-                                    {/* From Bin (for OUTBOUND, TRANSFER, DAMAGE) */}
+                                    {/* From Bin (for OUTBOUND, TRANSFER, DAMAGE, ADJUSTMENT) */}
                                     {[
                                         'OUTBOUND',
                                         'TRANSFER',
                                         'DAMAGE',
+                                        'ADJUSTMENT',
                                     ].includes(createForm.type) && (
                                         <div>
                                             <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
@@ -1777,8 +1831,14 @@ Reference: ${result.movement.referenceNo}`,
                                                         d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
                                                     />
                                                 </svg>
-                                                From Bin{' '}
+                                                {createForm.type ===
+                                                'ADJUSTMENT'
+                                                    ? 'Bin to Adjust'
+                                                    : 'From Bin'}{' '}
                                                 {createForm.type === 'TRANSFER'
+                                                    ? '*'
+                                                    : createForm.type ===
+                                                      'ADJUSTMENT'
                                                     ? '*'
                                                     : '(Optional)'}
                                             </label>
@@ -1923,30 +1983,43 @@ Reference: ${result.movement.referenceNo}`,
                                                 />
                                             </svg>
                                             Quantity *
-                                            {availableStock !== null && (
-                                                <span className='ml-auto text-xs font-semibold text-slate-600'>
-                                                    {loadingStock ? (
-                                                        <span className='text-slate-400'>
-                                                            Loading...
-                                                        </span>
-                                                    ) : (
-                                                        <span
-                                                            className={
-                                                                availableStock >
-                                                                0
-                                                                    ? 'text-green-600'
-                                                                    : 'text-red-600'
-                                                            }
-                                                        >
-                                                            Available:{' '}
-                                                            {availableStock}
-                                                        </span>
-                                                    )}
+                                            {createForm.type ===
+                                                'ADJUSTMENT' && (
+                                                <span className='ml-2 text-xs font-normal text-blue-600 bg-blue-50 px-2 py-1 rounded'>
+                                                    💡 Enter new total quantity
+                                                    (absolute value)
                                                 </span>
                                             )}
+                                            {availableStock !== null &&
+                                                createForm.type !==
+                                                    'ADJUSTMENT' && (
+                                                    <span className='ml-auto text-xs font-semibold text-slate-600'>
+                                                        {loadingStock ? (
+                                                            <span className='text-slate-400'>
+                                                                Loading...
+                                                            </span>
+                                                        ) : (
+                                                            <span
+                                                                className={
+                                                                    availableStock >
+                                                                    0
+                                                                        ? 'text-green-600'
+                                                                        : 'text-red-600'
+                                                                }
+                                                            >
+                                                                Available:{' '}
+                                                                {availableStock}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                )}
                                         </label>
                                         <input
-                                            type='number'
+                                            type={
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? 'text'
+                                                    : 'number'
+                                            }
                                             value={createForm.quantity}
                                             onWheel={(e) =>
                                                 (
@@ -1955,6 +2028,89 @@ Reference: ${result.movement.referenceNo}`,
                                             }
                                             onChange={(e) => {
                                                 const value = e.target.value;
+
+                                                // Special handling for ADJUSTMENT - support relative values like +2, -2
+                                                if (
+                                                    createForm.type ===
+                                                    'ADJUSTMENT'
+                                                ) {
+                                                    // Allow empty, numbers, and +/- prefix
+                                                    if (
+                                                        value !== '' &&
+                                                        !/^[+-]?\d*$/.test(
+                                                            value
+                                                        )
+                                                    ) {
+                                                        return; // Block invalid input
+                                                    }
+
+                                                    // Calculate the resulting quantity
+                                                    if (
+                                                        value !== '' &&
+                                                        binCapacityInfo
+                                                    ) {
+                                                        const currentQty =
+                                                            binCapacityInfo.currentQty;
+                                                        let resultingQty: number;
+
+                                                        if (
+                                                            value.startsWith(
+                                                                '+'
+                                                            ) ||
+                                                            value.startsWith(
+                                                                '-'
+                                                            )
+                                                        ) {
+                                                            // Relative adjustment
+                                                            const adjustment =
+                                                                parseInt(value);
+                                                            if (
+                                                                !isNaN(
+                                                                    adjustment
+                                                                )
+                                                            ) {
+                                                                resultingQty =
+                                                                    currentQty +
+                                                                    adjustment;
+                                                            } else {
+                                                                // Allow partial input like "+" or "-"
+                                                                setCreateForm(
+                                                                    (prev) => ({
+                                                                        ...prev,
+                                                                        quantity:
+                                                                            value,
+                                                                    })
+                                                                );
+                                                                return;
+                                                            }
+                                                        } else {
+                                                            // Absolute value
+                                                            resultingQty =
+                                                                parseInt(value);
+                                                        }
+
+                                                        // Validate resulting quantity
+                                                        if (
+                                                            !isNaN(resultingQty)
+                                                        ) {
+                                                            if (
+                                                                resultingQty <
+                                                                    0 ||
+                                                                resultingQty >
+                                                                    binCapacityInfo.maxCapacity
+                                                            ) {
+                                                                return; // Block if out of range
+                                                            }
+                                                        }
+                                                    }
+
+                                                    setCreateForm((prev) => ({
+                                                        ...prev,
+                                                        quantity: value,
+                                                    }));
+                                                    return;
+                                                }
+
                                                 const numValue =
                                                     parseInt(value);
                                                 // Bin capacity validation (INBOUND/RETURN/TRANSFER)
@@ -1972,7 +2128,6 @@ Reference: ${result.movement.referenceNo}`,
                                                 ) {
                                                     return; // Block input if exceeds available space
                                                 }
-                                                // ...existing code...
                                                 // Prevent scientific notation and limit input
                                                 if (
                                                     value.includes('e') ||
@@ -1996,7 +2151,6 @@ Reference: ${result.movement.referenceNo}`,
                                                     'OUTBOUND',
                                                     'TRANSFER',
                                                     'DAMAGE',
-                                                    'ADJUSTMENT',
                                                 ].includes(createForm.type);
                                                 if (
                                                     needsStockCheck &&
@@ -2017,7 +2171,6 @@ Reference: ${result.movement.referenceNo}`,
                                                     'OUTBOUND',
                                                     'TRANSFER',
                                                     'DAMAGE',
-                                                    'ADJUSTMENT',
                                                 ].includes(createForm.type);
 
                                                 // Extra layer: enforce max at input level
@@ -2042,27 +2195,66 @@ Reference: ${result.movement.referenceNo}`,
                                                 }
                                             }}
                                             onKeyDown={(e) => {
-                                                // Prevent 'e', 'E', '+', '-' keys
+                                                // For ADJUSTMENT, allow +/- keys
                                                 if (
-                                                    [
-                                                        'e',
-                                                        'E',
-                                                        '+',
-                                                        '-',
-                                                        '.',
-                                                    ].includes(e.key)
+                                                    createForm.type ===
+                                                    'ADJUSTMENT'
                                                 ) {
-                                                    e.preventDefault();
+                                                    // Only prevent e, E, and dot
+                                                    if (
+                                                        [
+                                                            'e',
+                                                            'E',
+                                                            '.',
+                                                        ].includes(e.key)
+                                                    ) {
+                                                        e.preventDefault();
+                                                    }
+                                                } else {
+                                                    // For other types, prevent e, E, +, -, and dot
+                                                    if (
+                                                        [
+                                                            'e',
+                                                            'E',
+                                                            '+',
+                                                            '-',
+                                                            '.',
+                                                        ].includes(e.key)
+                                                    ) {
+                                                        e.preventDefault();
+                                                    }
                                                 }
                                             }}
                                             onPaste={(e) => {
-                                                // Prevent pasting non-numeric or scientific notation
-                                                const pastedText =
-                                                    e.clipboardData.getData(
-                                                        'text'
-                                                    );
-                                                if (!/^\d+$/.test(pastedText)) {
-                                                    e.preventDefault();
+                                                // For ADJUSTMENT, allow +/- in paste
+                                                if (
+                                                    createForm.type ===
+                                                    'ADJUSTMENT'
+                                                ) {
+                                                    const pastedText =
+                                                        e.clipboardData.getData(
+                                                            'text'
+                                                        );
+                                                    if (
+                                                        !/^[+-]?\d*$/.test(
+                                                            pastedText
+                                                        )
+                                                    ) {
+                                                        e.preventDefault();
+                                                    }
+                                                } else {
+                                                    // Prevent pasting non-numeric or scientific notation
+                                                    const pastedText =
+                                                        e.clipboardData.getData(
+                                                            'text'
+                                                        );
+                                                    if (
+                                                        !/^\d+$/.test(
+                                                            pastedText
+                                                        )
+                                                    ) {
+                                                        e.preventDefault();
+                                                    }
                                                 }
                                             }}
                                             onBlur={(e) => {
@@ -2106,21 +2298,40 @@ Reference: ${result.movement.referenceNo}`,
                                                 }
                                             }}
                                             required
-                                            min='1'
+                                            min={
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? undefined
+                                                    : '1'
+                                            }
                                             max={
-                                                availableStock !== null &&
-                                                [
-                                                    'OUTBOUND',
-                                                    'TRANSFER',
-                                                    'DAMAGE',
-                                                    'ADJUSTMENT',
-                                                ].includes(createForm.type)
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? undefined
+                                                    : availableStock !== null &&
+                                                      [
+                                                          'OUTBOUND',
+                                                          'TRANSFER',
+                                                          'DAMAGE',
+                                                      ].includes(
+                                                          createForm.type
+                                                      )
                                                     ? availableStock
                                                     : undefined
                                             }
-                                            step='1'
-                                            pattern='[0-9]*'
-                                            inputMode='numeric'
+                                            step={
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? undefined
+                                                    : '1'
+                                            }
+                                            pattern={
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? '[+-]?[0-9]+'
+                                                    : '[0-9]*'
+                                            }
+                                            inputMode={
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? 'text'
+                                                    : 'numeric'
+                                            }
                                             className={`w-full px-4 py-3 bg-white border-2 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 ${
                                                 availableStock !== null &&
                                                 [
@@ -2134,7 +2345,11 @@ Reference: ${result.movement.referenceNo}`,
                                                     ? 'border-red-300 bg-red-50'
                                                     : 'border-slate-200'
                                             }`}
-                                            placeholder='Enter quantity'
+                                            placeholder={
+                                                createForm.type === 'ADJUSTMENT'
+                                                    ? 'Enter quantity (+5, -3, or 50)'
+                                                    : 'Enter quantity'
+                                            }
                                             title={
                                                 availableStock !== null &&
                                                 [
@@ -2147,14 +2362,151 @@ Reference: ${result.movement.referenceNo}`,
                                                     : 'Enter the quantity for this movement'
                                             }
                                         />
-                                        {createForm.type === 'ADJUSTMENT' && (
-                                            <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
-                                                <p className='text-xs text-yellow-800 font-medium'>
-                                                    ⚠️ For adjustment, this will
-                                                    be the NEW absolute quantity
-                                                </p>
-                                            </div>
-                                        )}
+                                        {createForm.type === 'ADJUSTMENT' &&
+                                            binCapacityInfo && (
+                                                <div className='mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                                                    <div className='space-y-1'>
+                                                        <p className='text-xs text-blue-900 font-semibold'>
+                                                            📊 Stok Saat Ini:{' '}
+                                                            {
+                                                                binCapacityInfo.currentQty
+                                                            }{' '}
+                                                            unit
+                                                        </p>
+                                                        <p className='text-xs text-blue-800'>
+                                                            📦 Kapasitas
+                                                            Maksimum:{' '}
+                                                            {
+                                                                binCapacityInfo.maxCapacity
+                                                            }{' '}
+                                                            unit
+                                                        </p>
+                                                        <div className='mt-2 pt-2 border-t border-blue-200'>
+                                                            <p className='text-xs text-blue-900 font-medium mb-1'>
+                                                                💡 Cara Input:
+                                                            </p>
+                                                            <p className='text-xs text-blue-700'>
+                                                                • Absolut:{' '}
+                                                                <span className='font-mono bg-blue-100 px-1 rounded'>
+                                                                    50
+                                                                </span>{' '}
+                                                                (set menjadi 50
+                                                                unit)
+                                                            </p>
+                                                            <p className='text-xs text-blue-700'>
+                                                                • Tambah:{' '}
+                                                                <span className='font-mono bg-blue-100 px-1 rounded'>
+                                                                    +5
+                                                                </span>{' '}
+                                                                (tambah 5 unit)
+                                                            </p>
+                                                            <p className='text-xs text-blue-700'>
+                                                                • Kurang:{' '}
+                                                                <span className='font-mono bg-blue-100 px-1 rounded'>
+                                                                    -3
+                                                                </span>{' '}
+                                                                (kurangi 3 unit)
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        {createForm.type === 'ADJUSTMENT' &&
+                                            binCapacityInfo &&
+                                            createForm.quantity &&
+                                            (() => {
+                                                const currentQty =
+                                                    binCapacityInfo.currentQty;
+                                                const maxCapacity =
+                                                    binCapacityInfo.maxCapacity;
+                                                const inputValue =
+                                                    createForm.quantity;
+                                                let resultingQty:
+                                                    | number
+                                                    | null = null;
+                                                let isRelative = false;
+
+                                                if (
+                                                    inputValue.startsWith(
+                                                        '+'
+                                                    ) ||
+                                                    inputValue.startsWith('-')
+                                                ) {
+                                                    const adjustment =
+                                                        parseInt(inputValue);
+                                                    if (!isNaN(adjustment)) {
+                                                        resultingQty =
+                                                            currentQty +
+                                                            adjustment;
+                                                        isRelative = true;
+                                                    }
+                                                } else {
+                                                    const absValue =
+                                                        parseInt(inputValue);
+                                                    if (!isNaN(absValue)) {
+                                                        resultingQty = absValue;
+                                                    }
+                                                }
+
+                                                if (resultingQty !== null) {
+                                                    const isValid =
+                                                        resultingQty >= 0 &&
+                                                        resultingQty <=
+                                                            maxCapacity;
+                                                    const difference =
+                                                        resultingQty -
+                                                        currentQty;
+
+                                                    return (
+                                                        <div
+                                                            className={`mt-2 p-3 rounded-lg border ${
+                                                                isValid
+                                                                    ? 'bg-green-50 border-green-200'
+                                                                    : 'bg-red-50 border-red-200'
+                                                            }`}
+                                                        >
+                                                            <p
+                                                                className={`text-xs font-semibold ${
+                                                                    isValid
+                                                                        ? 'text-green-900'
+                                                                        : 'text-red-900'
+                                                                }`}
+                                                            >
+                                                                {isValid
+                                                                    ? '✅'
+                                                                    : '❌'}{' '}
+                                                                Hasil:{' '}
+                                                                {resultingQty}{' '}
+                                                                unit
+                                                            </p>
+                                                            <p
+                                                                className={`text-xs ${
+                                                                    isValid
+                                                                        ? 'text-green-800'
+                                                                        : 'text-red-800'
+                                                                }`}
+                                                            >
+                                                                {difference > 0
+                                                                    ? '+'
+                                                                    : ''}
+                                                                {difference}{' '}
+                                                                dari stok saat
+                                                                ini (
+                                                                {currentQty})
+                                                            </p>
+                                                            {!isValid && (
+                                                                <p className='text-xs text-red-800 mt-1 font-medium'>
+                                                                    {resultingQty <
+                                                                    0
+                                                                        ? '⚠️ Stok tidak boleh kurang dari 0'
+                                                                        : `⚠️ Melebihi kapasitas maksimum (${maxCapacity})`}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                         {binCapacityInfo &&
                                             [
                                                 'INBOUND',
