@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         }
 
         // For INBOUND and RETURN, show all items
-        if (movementType === 'INBOUND' || movementType === 'RETURN') {
+        if (movementType === 'INBOUND') {
             const where: any = { active: true };
 
             if (search) {
@@ -51,6 +51,62 @@ export async function GET(request: NextRequest) {
                 },
                 orderBy: { name: 'asc' },
             });
+
+            return successResponse({ items });
+        }
+
+        // For RETURN, only show items that have been OUTBOUNDed
+        if (movementType === 'RETURN') {
+            const whereItemMaster: any = { active: true };
+
+            if (search) {
+                whereItemMaster.OR = [
+                    { sku: { contains: search } },
+                    { name: { contains: search } },
+                    { barcode: { contains: search } },
+                ];
+            }
+
+            // Get items that have completed OUTBOUND movements
+            const outboundMovements = await prisma.movement.findMany({
+                where: {
+                    type: 'OUTBOUND',
+                    status: 'COMPLETED',
+                    item: {
+                        itemMaster: whereItemMaster,
+                    },
+                },
+                select: {
+                    item: {
+                        select: {
+                            itemMasterId: true,
+                            itemMaster: {
+                                select: {
+                                    id: true,
+                                    sku: true,
+                                    name: true,
+                                    barcode: true,
+                                    unitOfMeasure: true,
+                                    category: {
+                                        select: {
+                                            name: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                distinct: ['itemId'],
+            });
+
+            // Extract unique items
+            const items = outboundMovements
+                .map((mov) => mov.item.itemMaster)
+                .filter(
+                    (item, index, self) =>
+                        index === self.findIndex((t) => t.id === item.id)
+                );
 
             return successResponse({ items });
         }

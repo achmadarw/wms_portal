@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         }
 
         // For INBOUND and RETURN, return all warehouses and bins
-        if (movementType === 'INBOUND' || movementType === 'RETURN') {
+        if (movementType === 'INBOUND') {
             const warehouses = await prisma.warehouse.findMany({
                 where: { active: true },
                 include: {
@@ -42,12 +42,137 @@ export async function GET(request: NextRequest) {
                             row: true,
                             column: true,
                             level: true,
+                            maxCapacity: true,
+                            currentQty: true,
                         },
                         orderBy: { code: 'asc' },
                     },
                 },
                 orderBy: { name: 'asc' },
             });
+
+            return successResponse({ warehouses });
+        }
+
+        // For RETURN, only show warehouses/bins where this item was OUTBOUNDed
+        if (movementType === 'RETURN') {
+            console.log(
+                '[AVAILABLE-BINS] RETURN - Fetching OUTBOUND movements for itemId:',
+                itemId
+            );
+
+            // Get all completed OUTBOUND movements for this item
+            const outboundMovements = await prisma.movement.findMany({
+                where: {
+                    type: 'OUTBOUND',
+                    status: 'COMPLETED',
+                    item: {
+                        itemMasterId: itemId,
+                    },
+                },
+                select: {
+                    warehouseId: true,
+                    fromBin: true,
+                    warehouse: {
+                        select: {
+                            id: true,
+                            code: true,
+                            name: true,
+                            address: true,
+                        },
+                    },
+                },
+            });
+
+            console.log(
+                '[AVAILABLE-BINS] RETURN - Found OUTBOUND movements:',
+                outboundMovements.length
+            );
+            console.log(
+                '[AVAILABLE-BINS] RETURN - Movements details:',
+                outboundMovements.map((m) => ({
+                    warehouse: m.warehouse.name,
+                    fromBin: m.fromBin,
+                }))
+            );
+
+            // Group by warehouse
+            const warehouseMap = new Map<string, any>();
+
+            for (const movement of outboundMovements) {
+                const warehouseId = movement.warehouseId;
+
+                if (!warehouseMap.has(warehouseId)) {
+                    warehouseMap.set(warehouseId, {
+                        ...movement.warehouse,
+                        bins: [],
+                        binIds: new Set<string>(),
+                    });
+                }
+
+                const warehouse = warehouseMap.get(warehouseId);
+
+                // Collect bin IDs from OUTBOUND movements
+                if (
+                    movement.fromBin &&
+                    !warehouse.binIds.has(movement.fromBin)
+                ) {
+                    warehouse.binIds.add(movement.fromBin);
+                }
+            }
+
+            // Fetch bin details for each warehouse
+            const warehouses = [];
+            for (const [warehouseId, warehouseData] of warehouseMap) {
+                const binIds = Array.from(warehouseData.binIds);
+
+                console.log(
+                    '[AVAILABLE-BINS] RETURN - Warehouse:',
+                    warehouseData.name,
+                    'Bin IDs:',
+                    binIds
+                );
+
+                if (binIds.length > 0) {
+                    const bins = await prisma.bin.findMany({
+                        where: {
+                            warehouseId,
+                            id: { in: binIds },
+                            active: true,
+                        },
+                        select: {
+                            id: true,
+                            code: true,
+                            name: true,
+                            row: true,
+                            column: true,
+                            level: true,
+                            maxCapacity: true,
+                            currentQty: true,
+                        },
+                        orderBy: { code: 'asc' },
+                    });
+
+                    console.log('[AVAILABLE-BINS] RETURN - Found bins:', bins);
+
+                    warehouses.push({
+                        id: warehouseData.id,
+                        code: warehouseData.code,
+                        name: warehouseData.name,
+                        address: warehouseData.address,
+                        bins,
+                    });
+                }
+            }
+
+            console.log(
+                '[AVAILABLE-BINS] RETURN - Final warehouses:',
+                warehouses.map((w) => ({
+                    id: w.id,
+                    name: w.name,
+                    binsCount: w.bins.length,
+                }))
+            );
 
             return successResponse({ warehouses });
         }
@@ -101,6 +226,8 @@ export async function GET(request: NextRequest) {
                         row: true,
                         column: true,
                         level: true,
+                        maxCapacity: true,
+                        currentQty: true,
                     },
                 });
                 if (bin && !warehouse.bins.find((b: any) => b.id === bin.id)) {

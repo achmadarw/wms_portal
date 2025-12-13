@@ -105,6 +105,12 @@ export default function MovementsPage() {
     const [bins, setBins] = useState<any[]>([]);
     const [availableStock, setAvailableStock] = useState<number | null>(null);
     const [loadingStock, setLoadingStock] = useState(false);
+    // For RETURN - max returnable quantity
+    const [maxReturnable, setMaxReturnable] = useState<number | null>(null);
+    const [returnInfo, setReturnInfo] = useState<{
+        totalOutbound: number;
+        totalReturned: number;
+    } | null>(null);
     // Bin capacity info for validation
     const [binCapacityInfo, setBinCapacityInfo] = useState<{
         currentQty: number;
@@ -230,6 +236,41 @@ export default function MovementsPage() {
         const fetchBins = async () => {
             if (createForm.warehouseId) {
                 try {
+                    // For RETURN movement, bins are already filtered from available-bins API
+                    // Just extract bins from the selected warehouse
+                    if (createForm.type === 'RETURN') {
+                        console.log(
+                            '[DEBUG] RETURN - Looking for warehouse:',
+                            createForm.warehouseId
+                        );
+                        console.log(
+                            '[DEBUG] Available warehouses:',
+                            warehouses.map((w: any) => ({
+                                id: w.id,
+                                name: w.name,
+                                binsCount: w.bins?.length,
+                            }))
+                        );
+
+                        const selectedWarehouse = warehouses.find(
+                            (w: any) => w.id === createForm.warehouseId
+                        );
+                        if (selectedWarehouse) {
+                            console.log(
+                                '[DEBUG] Using filtered bins for RETURN:',
+                                selectedWarehouse.bins
+                            );
+                            setBins(selectedWarehouse.bins || []);
+                        } else {
+                            console.log(
+                                '[DEBUG] Warehouse not found in warehouses list'
+                            );
+                            setBins([]);
+                        }
+                        return;
+                    }
+
+                    // For other movement types, fetch all bins from warehouse
                     const token = localStorage.getItem('accessToken');
                     console.log(
                         '[DEBUG] Fetching bins for warehouse:',
@@ -267,7 +308,7 @@ export default function MovementsPage() {
             }
         };
         fetchBins();
-    }, [createForm.warehouseId]);
+    }, [createForm.warehouseId, createForm.type, warehouses]);
 
     // Fetch available stock when item and warehouse are selected (for OUTBOUND/TRANSFER/DAMAGE)
     useEffect(() => {
@@ -401,6 +442,49 @@ export default function MovementsPage() {
         createForm.warehouseId,
         createForm.type,
     ]);
+
+    // Fetch returnable quantity for RETURN movements
+    useEffect(() => {
+        const fetchReturnableQuantity = async () => {
+            if (
+                createForm.type === 'RETURN' &&
+                createForm.itemId &&
+                createForm.warehouseId
+            ) {
+                try {
+                    const token = localStorage.getItem('accessToken');
+                    const res = await fetch(
+                        `/api/movements/returnable-quantity?itemId=${createForm.itemId}&warehouseId=${createForm.warehouseId}`,
+                        {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }
+                    );
+                    if (res.status === 401) {
+                        handleUnauthorized();
+                        return;
+                    }
+                    if (res.ok) {
+                        const data = await res.json();
+                        setMaxReturnable(data.maxReturnable);
+                        setReturnInfo({
+                            totalOutbound: data.totalOutbound,
+                            totalReturned: data.totalReturned,
+                        });
+                    } else {
+                        setMaxReturnable(null);
+                        setReturnInfo(null);
+                    }
+                } catch (error) {
+                    setMaxReturnable(null);
+                    setReturnInfo(null);
+                }
+            } else {
+                setMaxReturnable(null);
+                setReturnInfo(null);
+            }
+        };
+        fetchReturnableQuantity();
+    }, [createForm.type, createForm.itemId, createForm.warehouseId]);
 
     const fetchMovements = async () => {
         try {
@@ -2113,6 +2197,17 @@ Reference: ${result.movement.referenceNo}`,
 
                                                 const numValue =
                                                     parseInt(value);
+
+                                                // RETURN quantity validation - cannot exceed max returnable
+                                                if (
+                                                    createForm.type ===
+                                                        'RETURN' &&
+                                                    maxReturnable !== null &&
+                                                    numValue > maxReturnable
+                                                ) {
+                                                    return; // Block input if exceeds max returnable
+                                                }
+
                                                 // Bin capacity validation (INBOUND/RETURN/TRANSFER)
                                                 if (
                                                     [
@@ -2507,6 +2602,62 @@ Reference: ${result.movement.referenceNo}`,
                                                 }
                                                 return null;
                                             })()}
+                                        {createForm.type === 'RETURN' &&
+                                            returnInfo &&
+                                            maxReturnable !== null && (
+                                                <div className='mt-2 p-3 bg-purple-50 border border-purple-200 rounded-lg'>
+                                                    <div className='space-y-1'>
+                                                        <p className='text-xs text-purple-900 font-semibold'>
+                                                            📤 Total OUTBOUND:{' '}
+                                                            {
+                                                                returnInfo.totalOutbound
+                                                            }{' '}
+                                                            unit
+                                                        </p>
+                                                        <p className='text-xs text-purple-800'>
+                                                            ↩️ Sudah di-RETURN:{' '}
+                                                            {
+                                                                returnInfo.totalReturned
+                                                            }{' '}
+                                                            unit
+                                                        </p>
+                                                        <p className='text-xs text-purple-900 font-bold mt-2 pt-2 border-t border-purple-200'>
+                                                            ✅ Maksimum bisa
+                                                            di-RETURN:{' '}
+                                                            {maxReturnable} unit
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        {createForm.type === 'RETURN' &&
+                                            maxReturnable !== null &&
+                                            parseInt(createForm.quantity) >
+                                                maxReturnable && (
+                                                <div className='mt-2 p-3 bg-red-50 border border-red-200 rounded-lg'>
+                                                    <p className='text-xs text-red-800 font-medium'>
+                                                        ❌ Quantity RETURN
+                                                        melebihi maksimum yang
+                                                        bisa dikembalikan!
+                                                        <br />
+                                                        Maksimum:{' '}
+                                                        {maxReturnable} unit
+                                                    </p>
+                                                </div>
+                                            )}
+                                        {createForm.type === 'RETURN' &&
+                                            maxReturnable === 0 && (
+                                                <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                                                    <p className='text-xs text-yellow-800 font-medium'>
+                                                        ⚠️ Tidak ada barang yang
+                                                        bisa di-RETURN untuk
+                                                        item ini.
+                                                        <br />
+                                                        Semua OUTBOUND sudah
+                                                        di-RETURN atau belum ada
+                                                        OUTBOUND.
+                                                    </p>
+                                                </div>
+                                            )}
                                         {binCapacityInfo &&
                                             [
                                                 'INBOUND',

@@ -408,6 +408,54 @@ export async function validateMovement(params: CreateMovementParams): Promise<{
             if (!params.toBinId) {
                 errors.push('Destination bin is required for RETURN movements');
             }
+
+            // Validate that this item has been OUTBOUNDed before
+            // Use itemMasterId through relation, not inventoryItemId directly
+            const totalOutbound = await prisma.movement.aggregate({
+                where: {
+                    warehouseId: params.warehouseId,
+                    type: 'OUTBOUND',
+                    status: 'COMPLETED',
+                    item: {
+                        itemMasterId: item.itemMasterId, // Filter by itemMaster
+                    },
+                },
+                _sum: {
+                    quantity: true,
+                },
+            });
+
+            const totalReturned = await prisma.movement.aggregate({
+                where: {
+                    warehouseId: params.warehouseId,
+                    type: 'RETURN',
+                    status: 'COMPLETED',
+                    item: {
+                        itemMasterId: item.itemMasterId, // Filter by itemMaster
+                    },
+                },
+                _sum: {
+                    quantity: true,
+                },
+            });
+
+            const outboundQty = totalOutbound._sum.quantity || 0;
+            const returnedQty = totalReturned._sum.quantity || 0;
+            const maxReturnable = outboundQty - returnedQty;
+
+            if (outboundQty === 0) {
+                errors.push(
+                    `Item "${item.itemMaster.name}" has never been sent out (no OUTBOUND history). Cannot create RETURN.`
+                );
+            } else if (maxReturnable <= 0) {
+                errors.push(
+                    `All OUTBOUNDed items have already been returned. No more returns allowed.`
+                );
+            } else if (params.quantity > maxReturnable) {
+                errors.push(
+                    `Return quantity (${params.quantity}) exceeds maximum returnable amount (${maxReturnable}). Total OUTBOUND: ${outboundQty}, Already returned: ${returnedQty}`
+                );
+            }
             break;
     }
 
