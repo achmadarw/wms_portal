@@ -12,6 +12,7 @@ import {
     X,
     Search,
 } from 'lucide-react';
+import TableSkeleton from '@/components/TableSkeleton';
 
 interface Reservation {
     id: string;
@@ -78,6 +79,7 @@ export default function ReservationsPage() {
     const [selectedReservations, setSelectedReservations] = useState<string[]>(
         []
     );
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     // Filters
     const [statusFilter, setStatusFilter] = useState<string>('');
@@ -311,30 +313,7 @@ export default function ReservationsPage() {
     };
 
     if (loading) {
-        return (
-            <div className='space-y-6'>
-                <div className='animate-pulse'>
-                    {/* Header Skeleton */}
-                    <div className='bg-gray-200 rounded-2xl h-40 mb-6'></div>
-
-                    {/* Stats Cards Skeleton */}
-                    <div className='grid grid-cols-1 md:grid-cols-6 gap-6 mb-6'>
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div
-                                key={i}
-                                className='bg-gray-200 rounded-2xl h-32'
-                            ></div>
-                        ))}
-                    </div>
-
-                    {/* Filters Skeleton */}
-                    <div className='bg-gray-200 rounded-2xl h-48 mb-6'></div>
-
-                    {/* Table Skeleton */}
-                    <div className='bg-gray-200 rounded-2xl h-96'></div>
-                </div>
-            </div>
-        );
+        return <TableSkeleton rows={10} columns={7} />;
     }
 
     return (
@@ -356,6 +335,25 @@ export default function ReservationsPage() {
                             </p>
                         </div>
                     </div>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition-colors font-semibold shadow-lg'
+                    >
+                        <svg
+                            className='w-5 h-5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M12 4v16m8-8H4'
+                            />
+                        </svg>
+                        Create Reservation
+                    </button>
                 </div>
             </div>
 
@@ -779,6 +777,43 @@ export default function ReservationsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Create Reservation Modal */}
+            {showCreateModal && (
+                <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50'>
+                    <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto'>
+                        <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 flex justify-between items-center'>
+                            <h2 className='text-xl font-bold text-white'>
+                                Create New Reservation
+                            </h2>
+                            <button
+                                onClick={() => setShowCreateModal(false)}
+                                className='text-white hover:bg-white/20 rounded-lg p-2 transition'
+                            >
+                                <X className='w-5 h-5' />
+                            </button>
+                        </div>
+                        <div className='p-6'>
+                            <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6'>
+                                <p className='text-blue-800 text-sm'>
+                                    <strong>Note:</strong> Fitur Create
+                                    Reservation masih dalam pengembangan. Untuk
+                                    saat ini, reservasi dibuat otomatis dari
+                                    sistem order/transfer.
+                                </p>
+                            </div>
+                            <div className='flex justify-end gap-3'>
+                                <button
+                                    onClick={() => setShowCreateModal(false)}
+                                    className='px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition font-semibold'
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

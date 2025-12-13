@@ -12,6 +12,7 @@ import {
     FolderTree,
 } from 'lucide-react';
 import { User } from '@prisma/client';
+import TableSkeleton from '@/components/TableSkeleton';
 
 interface Category {
     id: string;
@@ -314,30 +315,7 @@ export default function CategoriesPage() {
     };
 
     if (loading) {
-        return (
-            <div className='space-y-6'>
-                <div className='animate-pulse'>
-                    {/* Header Skeleton */}
-                    <div className='bg-gray-200 rounded-2xl h-40 mb-6'></div>
-
-                    {/* Stats Cards Skeleton */}
-                    <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-6'>
-                        {[1, 2, 3, 4].map((i) => (
-                            <div
-                                key={i}
-                                className='bg-gray-200 rounded-2xl h-32'
-                            ></div>
-                        ))}
-                    </div>
-
-                    {/* Filters Skeleton */}
-                    <div className='bg-gray-200 rounded-2xl h-32 mb-6'></div>
-
-                    {/* Table Skeleton */}
-                    <div className='bg-gray-200 rounded-2xl h-96'></div>
-                </div>
-            </div>
-        );
+        return <TableSkeleton rows={10} columns={5} />;
     }
 
     const topLevelCategories = filteredCategories.filter(

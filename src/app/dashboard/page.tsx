@@ -3,12 +3,37 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import NProgress from 'nprogress';
+import DashboardSkeleton from '@/components/DashboardSkeleton';
 
 interface DashboardStats {
     totalWarehouses: number;
     totalItems: number;
     totalMovements: number;
     activeUsers: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+}
+
+interface LowStockItem {
+    id: string;
+    sku: string;
+    name: string;
+    currentStock: number;
+    minStockLevel: number;
+    reorderPoint: number;
+}
+
+interface RecentActivity {
+    id: string;
+    type: string;
+    itemSku: string;
+    itemName: string;
+    warehouseName: string;
+    quantity: number;
+    notes?: string;
+    createdAt: string;
+    createdBy: string;
 }
 
 export default function DashboardPage() {
@@ -18,12 +43,18 @@ export default function DashboardPage() {
         totalItems: 0,
         totalMovements: 0,
         activeUsers: 0,
+        lowStockCount: 0,
+        outOfStockCount: 0,
     });
     const [loading, setLoading] = useState(true);
     const [userName, setUserName] = useState('User');
+    const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
+    const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
+        []
+    );
 
     useEffect(() => {
-        const checkAuth = () => {
+        const checkAuth = async () => {
             const token = localStorage.getItem('accessToken');
             if (!token) {
                 router.push('/login');
@@ -37,30 +68,59 @@ export default function DashboardPage() {
                 setUserName(user.fullName || user.email);
             }
 
-            // Simulate loading dashboard data
-            setLoading(false);
-            setStats({
-                totalWarehouses: 5,
-                totalItems: 1250,
-                totalMovements: 342,
-                activeUsers: 12,
-            });
+            // Fetch dashboard data
+            await fetchDashboardData();
         };
 
         checkAuth();
     }, [router]);
 
+    const fetchDashboardData = async () => {
+        try {
+            NProgress.start();
+            setLoading(true);
+            const token = localStorage.getItem('accessToken');
+
+            if (!token) {
+                console.error('No access token found');
+                setLoading(false);
+                NProgress.done();
+                return;
+            }
+
+            console.log('Fetching dashboard data...');
+            const response = await fetch('/api/dashboard/stats', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            console.log('Dashboard API response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Dashboard data received:', data);
+                setStats(data.stats);
+                setLowStockItems(data.lowStockItems || []);
+                setRecentActivities(data.recentActivities || []);
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.error(
+                    'Failed to fetch dashboard data:',
+                    response.status,
+                    errorData
+                );
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setLoading(false);
+            NProgress.done();
+        }
+    };
+
     if (loading) {
-        return (
-            <div className='flex justify-center items-center h-96'>
-                <div className='flex flex-col items-center gap-4'>
-                    <div className='w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin'></div>
-                    <div className='text-lg text-slate-600'>
-                        Loading dashboard...
-                    </div>
-                </div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     return (
@@ -101,8 +161,6 @@ export default function DashboardPage() {
                     <StatCard
                         title='Total Warehouses'
                         value={stats.totalWarehouses}
-                        trend='+2.5%'
-                        trendUp={true}
                         icon={
                             <svg
                                 className='w-8 h-8'
@@ -123,8 +181,6 @@ export default function DashboardPage() {
                     <StatCard
                         title='Total Items'
                         value={stats.totalItems.toLocaleString()}
-                        trend='+12.3%'
-                        trendUp={true}
                         icon={
                             <svg
                                 className='w-8 h-8'
@@ -145,8 +201,6 @@ export default function DashboardPage() {
                     <StatCard
                         title='Total Movements'
                         value={stats.totalMovements}
-                        trend='+8.7%'
-                        trendUp={true}
                         icon={
                             <svg
                                 className='w-8 h-8'
@@ -167,8 +221,6 @@ export default function DashboardPage() {
                     <StatCard
                         title='Active Users'
                         value={stats.activeUsers}
-                        trend='+5.2%'
-                        trendUp={true}
                         icon={
                             <svg
                                 className='w-8 h-8'
@@ -227,7 +279,7 @@ export default function DashboardPage() {
                                         </svg>
                                     }
                                     color='bg-blue-50 text-blue-700 hover:bg-blue-100'
-                                    href='/inventory/receive'
+                                    href='/dashboard/movements'
                                 />
                                 <QuickActionCard
                                     title='Dispatch Items'
@@ -247,7 +299,7 @@ export default function DashboardPage() {
                                         </svg>
                                     }
                                     color='bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                    href='/inventory/dispatch'
+                                    href='/dashboard/movements'
                                 />
                                 <QuickActionCard
                                     title='Stock Transfer'
@@ -267,7 +319,7 @@ export default function DashboardPage() {
                                         </svg>
                                     }
                                     color='bg-purple-50 text-purple-700 hover:bg-purple-100'
-                                    href='/inventory/transfer'
+                                    href='/dashboard/movements'
                                 />
                                 <QuickActionCard
                                     title='View Reports'
@@ -287,7 +339,7 @@ export default function DashboardPage() {
                                         </svg>
                                     }
                                     color='bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                    href='/reports'
+                                    href='/inventory/reports'
                                 />
                                 <QuickActionCard
                                     title='Manage Users'
@@ -333,7 +385,7 @@ export default function DashboardPage() {
                                         </svg>
                                     }
                                     color='bg-slate-50 text-slate-700 hover:bg-slate-100'
-                                    href='/settings'
+                                    href='/dashboard/users'
                                 />
                             </div>
                         </div>
@@ -356,86 +408,117 @@ export default function DashboardPage() {
                                 </svg>
                                 Recent Activity
                             </h2>
-                            <div className='space-y-4'>
-                                <ActivityItem
-                                    type='receive'
-                                    action='Stock Received'
-                                    details='100 units of SKU-001 added to Warehouse A'
-                                    time='2 hours ago'
-                                    user='John Doe'
-                                />
-                                <ActivityItem
-                                    type='dispatch'
-                                    action='Stock Dispatched'
-                                    details='50 units of SKU-002 sent to Customer XYZ'
-                                    time='4 hours ago'
-                                    user='Jane Smith'
-                                />
-                                <ActivityItem
-                                    type='transfer'
-                                    action='Stock Transfer'
-                                    details='25 units moved from Warehouse A to B'
-                                    time='6 hours ago'
-                                    user='Mike Johnson'
-                                />
-                                <ActivityItem
-                                    type='adjust'
-                                    action='Inventory Adjustment'
-                                    details='Corrected stock count for SKU-003'
-                                    time='1 day ago'
-                                    user='Sarah Williams'
-                                />
-                            </div>
+                            {recentActivities.length === 0 ? (
+                                <div className='text-center py-8 text-slate-500'>
+                                    No recent activities
+                                </div>
+                            ) : (
+                                <div className='space-y-4'>
+                                    {recentActivities
+                                        .slice(0, 4)
+                                        .map((activity) => (
+                                            <ActivityItem
+                                                key={activity.id}
+                                                type={
+                                                    activity.type.toLowerCase() as any
+                                                }
+                                                action={`${activity.type} Movement`}
+                                                details={`${activity.quantity} units of ${activity.itemName} at ${activity.warehouseName}`}
+                                                time={new Date(
+                                                    activity.createdAt
+                                                ).toLocaleString('id-ID', {
+                                                    dateStyle: 'short',
+                                                    timeStyle: 'short',
+                                                })}
+                                                user={activity.createdBy}
+                                            />
+                                        ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Low Stock Alert */}
                     <div>
                         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8'>
-                            <h2 className='text-xl font-bold text-slate-900 mb-6 flex items-center gap-2'>
-                                <svg
-                                    className='w-6 h-6 text-amber-600'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-                                    />
-                                </svg>
-                                Low Stock Alert
-                            </h2>
-                            <div className='space-y-4'>
-                                <LowStockItem
-                                    sku='SKU-001'
-                                    name='Product A'
-                                    current={45}
-                                    minimum={100}
-                                    percentage={45}
-                                />
-                                <LowStockItem
-                                    sku='SKU-005'
-                                    name='Product E'
-                                    current={78}
-                                    minimum={150}
-                                    percentage={52}
-                                />
-                                <LowStockItem
-                                    sku='SKU-012'
-                                    name='Product L'
-                                    current={23}
-                                    minimum={50}
-                                    percentage={46}
-                                />
-                            </div>
+                            <Link href='/dashboard/alerts'>
+                                <h2 className='text-xl font-bold text-slate-900 mb-6 flex items-center gap-2 hover:text-primary-600 transition-colors cursor-pointer'>
+                                    <svg
+                                        className='w-6 h-6 text-amber-600'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+                                        />
+                                    </svg>
+                                    Low Stock Alert ({stats.lowStockCount})
+                                    <svg
+                                        className='w-4 h-4 ml-auto'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M9 5l7 7-7 7'
+                                        />
+                                    </svg>
+                                </h2>
+                            </Link>
+                            {lowStockItems.length === 0 ? (
+                                <div className='text-center py-8'>
+                                    <svg
+                                        className='w-12 h-12 text-green-500 mx-auto mb-3'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                                        />
+                                    </svg>
+                                    <p className='text-slate-600 font-medium'>
+                                        All items are well stocked!
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className='space-y-4'>
+                                    {lowStockItems.slice(0, 4).map((item) => {
+                                        const percentage =
+                                            (item.currentStock /
+                                                item.reorderPoint) *
+                                            100;
+                                        return (
+                                            <LowStockItem
+                                                key={item.id}
+                                                sku={item.sku}
+                                                name={item.name}
+                                                current={item.currentStock}
+                                                minimum={item.reorderPoint}
+                                                percentage={Math.min(
+                                                    percentage,
+                                                    100
+                                                )}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         {/* System Status */}
                         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6'>
-                            <h2 className='text-xl font-bold text-slate-900 mb-6 flex items-center gap-2'>
+                            <h2 className='text-xl font-bold text-slate-900 mb-2 flex items-center gap-2'>
                                 <svg
                                     className='w-6 h-6 text-emerald-600'
                                     fill='none'
@@ -451,6 +534,9 @@ export default function DashboardPage() {
                                 </svg>
                                 System Status
                             </h2>
+                            <p className='text-xs text-slate-500 mb-4'>
+                                Static indicators - not real-time monitoring
+                            </p>
                             <div className='space-y-3'>
                                 <StatusItem
                                     label='Database'
@@ -480,8 +566,8 @@ export default function DashboardPage() {
 interface StatCardProps {
     title: string;
     value: number | string;
-    trend: string;
-    trendUp: boolean;
+    trend?: string;
+    trendUp?: boolean;
     icon: React.ReactNode;
     gradient: string;
 }
@@ -502,26 +588,28 @@ function StatCard({
                 >
                     {icon}
                 </div>
-                <div
-                    className={`flex items-center gap-1 text-sm font-semibold ${
-                        trendUp ? 'text-emerald-600' : 'text-red-600'
-                    }`}
-                >
-                    <svg
-                        className={`w-4 h-4 ${trendUp ? '' : 'rotate-180'}`}
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
+                {trend && trendUp !== undefined && (
+                    <div
+                        className={`flex items-center gap-1 text-sm font-semibold ${
+                            trendUp ? 'text-emerald-600' : 'text-red-600'
+                        }`}
                     >
-                        <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M5 10l7-7m0 0l7 7m-7-7v18'
-                        />
-                    </svg>
-                    {trend}
-                </div>
+                        <svg
+                            className={`w-4 h-4 ${trendUp ? '' : 'rotate-180'}`}
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M5 10l7-7m0 0l7 7m-7-7v18'
+                            />
+                        </svg>
+                        {trend}
+                    </div>
+                )}
             </div>
             <div>
                 <p className='text-sm text-slate-600 mb-1'>{title}</p>
@@ -551,7 +639,16 @@ function QuickActionCard({ title, icon, color, href }: QuickActionCardProps) {
 }
 
 interface ActivityItemProps {
-    type: 'receive' | 'dispatch' | 'transfer' | 'adjust';
+    type:
+        | 'inbound'
+        | 'outbound'
+        | 'transfer'
+        | 'adjustment'
+        | 'return'
+        | 'receive'
+        | 'dispatch'
+        | 'adjust'
+        | 'damage';
     action: string;
     details: string;
     time: string;
@@ -566,14 +663,49 @@ function ActivityItem({
     user,
 }: ActivityItemProps) {
     const colors = {
+        inbound: 'bg-blue-100 text-blue-700',
         receive: 'bg-blue-100 text-blue-700',
+        outbound: 'bg-emerald-100 text-emerald-700',
         dispatch: 'bg-emerald-100 text-emerald-700',
         transfer: 'bg-purple-100 text-purple-700',
+        adjustment: 'bg-amber-100 text-amber-700',
         adjust: 'bg-amber-100 text-amber-700',
+        return: 'bg-orange-100 text-orange-700',
+        damage: 'bg-red-100 text-red-700',
     };
 
     const icons = {
+        inbound: (
+            <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+            >
+                <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
+                />
+            </svg>
+        ),
         receive: (
+            <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+            >
+                <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
+                />
+            </svg>
+        ),
+        outbound: (
             <svg
                 className='w-5 h-5'
                 fill='none'
@@ -618,6 +750,21 @@ function ActivityItem({
                 />
             </svg>
         ),
+        adjustment: (
+            <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+            >
+                <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
+                />
+            </svg>
+        ),
         adjust: (
             <svg
                 className='w-5 h-5'
@@ -630,6 +777,36 @@ function ActivityItem({
                     strokeLinejoin='round'
                     strokeWidth={2}
                     d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
+                />
+            </svg>
+        ),
+        return: (
+            <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+            >
+                <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6'
+                />
+            </svg>
+        ),
+        damage: (
+            <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+            >
+                <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
                 />
             </svg>
         ),

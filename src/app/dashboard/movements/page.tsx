@@ -6,6 +6,7 @@ import Alert from '@/components/Alert';
 import { useAlert } from '@/hooks/useAlert';
 import Pagination from '@/components/Pagination';
 import { withProgress } from '@/lib/progress';
+import MovementSkeleton from '@/components/MovementSkeleton';
 
 interface Movement {
     id: string;
@@ -893,22 +894,7 @@ Reference: ${result.movement.referenceNo}`,
     const totalPages = Math.ceil(movements.length / itemsPerPage);
 
     if (loading) {
-        return (
-            <div className='p-6'>
-                <div className='animate-pulse'>
-                    <div className='h-8 bg-gray-200 rounded w-1/4 mb-4'></div>
-                    <div className='grid grid-cols-4 gap-4 mb-6'>
-                        {[1, 2, 3, 4].map((i) => (
-                            <div
-                                key={i}
-                                className='h-24 bg-gray-200 rounded'
-                            ></div>
-                        ))}
-                    </div>
-                    <div className='h-96 bg-gray-200 rounded'></div>
-                </div>
-            </div>
-        );
+        return <MovementSkeleton />;
     }
 
     return (

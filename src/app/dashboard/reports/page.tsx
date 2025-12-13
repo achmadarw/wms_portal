@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Pagination from '@/components/Pagination';
 
 interface StockReport {
     id: string;
@@ -69,6 +70,10 @@ export default function ReportsPage() {
         startDate: '',
         endDate: '',
     });
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
     useEffect(() => {
         if (activeReport === 'stock') {
@@ -148,6 +153,25 @@ export default function ReportsPage() {
                 return 'bg-gray-100 text-gray-800';
         }
     };
+
+    // Pagination logic for stock report
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentStockItems = stockReport.slice(
+        indexOfFirstItem,
+        indexOfLastItem
+    );
+    const totalPages = Math.ceil(stockReport.length / itemsPerPage);
+
+    const handlePageChange = (pageNumber: number) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Reset to page 1 when filters or report type changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters, activeReport]);
 
     return (
         <div className='space-y-6'>
@@ -345,7 +369,7 @@ export default function ReportsPage() {
                                         Total Value
                                     </div>
                                     <div className='text-2xl font-bold mt-2'>
-                                        $
+                                        Rp
                                         {stockSummary.totalStockValue.toFixed(
                                             2
                                         )}
@@ -409,7 +433,7 @@ export default function ReportsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className='divide-y divide-gray-200'>
-                                        {stockReport.map((item) => (
+                                        {currentStockItems.map((item) => (
                                             <tr
                                                 key={item.id}
                                                 className='hover:bg-gray-50'
@@ -439,7 +463,7 @@ export default function ReportsPage() {
                                                     {item.maxStockLevel || '-'}
                                                 </td>
                                                 <td className='px-6 py-4 font-medium'>
-                                                    $
+                                                    Rp
                                                     {item.stockValue.toFixed(2)}
                                                 </td>
                                                 <td className='px-6 py-4'>
@@ -463,6 +487,16 @@ export default function ReportsPage() {
                                         ))}
                                     </tbody>
                                 </table>
+
+                                {/* Pagination for Stock Report */}
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    totalItems={stockReport.length}
+                                    itemsPerPage={itemsPerPage}
+                                    onPageChange={handlePageChange}
+                                    showItemsPerPage={false}
+                                />
                             </div>
                         </>
                     )}

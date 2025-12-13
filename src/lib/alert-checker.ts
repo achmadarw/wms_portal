@@ -160,7 +160,7 @@ export async function checkStockLevelsAndGenerateAlerts(): Promise<AlertCheckRes
                         await prisma.stockAlert.create({
                             data: {
                                 alertType: 'OVERSTOCK',
-                                severity: 'LOW',
+                                severity: 'MEDIUM',
                                 message: `Item ${itemMaster.name} (${itemMaster.sku}) is OVERSTOCKED (${availableQty} units) at ${warehouse.name}. Maximum level: ${maxStockLevel}`,
                                 itemMasterId,
                                 warehouseId,

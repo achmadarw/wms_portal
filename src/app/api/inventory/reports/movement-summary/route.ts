@@ -35,12 +35,16 @@ export async function GET(request: NextRequest) {
                 },
             },
             include: {
-                itemMaster: {
-                    select: {
-                        id: true,
-                        sku: true,
-                        name: true,
-                        category: true,
+                item: {
+                    include: {
+                        itemMaster: {
+                            select: {
+                                id: true,
+                                sku: true,
+                                name: true,
+                                category: true,
+                            },
+                        },
                     },
                 },
                 warehouse: {
@@ -84,7 +88,8 @@ export async function GET(request: NextRequest) {
         // Group by category
         const byCategory: Record<string, any> = {};
         movements.forEach((movement) => {
-            const category = movement.itemMaster.category;
+            const category =
+                movement.item.itemMaster.category?.name || 'Uncategorized';
             if (!byCategory[category]) {
                 byCategory[category] = {
                     category,
@@ -97,7 +102,7 @@ export async function GET(request: NextRequest) {
             byCategory[category].count++;
             if (movement.type === 'INBOUND') byCategory[category].inbound++;
             if (movement.type === 'OUTBOUND') byCategory[category].outbound++;
-            byCategory[category].items.add(movement.itemMaster.id);
+            byCategory[category].items.add(movement.item.itemMaster.id);
         });
 
         // Convert category items set to count
@@ -110,13 +115,15 @@ export async function GET(request: NextRequest) {
         // Top moving items
         const itemMovements: Record<string, any> = {};
         movements.forEach((movement) => {
-            const itemId = movement.itemMaster.id;
+            const itemId = movement.item.itemMaster.id;
             if (!itemMovements[itemId]) {
                 itemMovements[itemId] = {
                     itemId,
-                    sku: movement.itemMaster.sku,
-                    name: movement.itemMaster.name,
-                    category: movement.itemMaster.category,
+                    sku: movement.item.itemMaster.sku,
+                    name: movement.item.itemMaster.name,
+                    category:
+                        movement.item.itemMaster.category?.name ||
+                        'Uncategorized',
                     totalMovements: 0,
                     totalQuantity: 0,
                 };

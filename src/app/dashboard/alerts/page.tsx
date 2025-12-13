@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Pagination from '@/components/Pagination';
 import {
     AlertTriangle,
     Bell,
@@ -88,6 +89,10 @@ export default function AlertsPage() {
         acknowledged: 'false',
         resolved: 'false',
     });
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
     useEffect(() => {
         const checkAuth = () => {
@@ -225,6 +230,22 @@ export default function AlertsPage() {
             timeStyle: 'short',
         });
     };
+
+    // Pagination logic
+    const indexOfLastAlert = currentPage * itemsPerPage;
+    const indexOfFirstAlert = indexOfLastAlert - itemsPerPage;
+    const currentAlerts = alerts.slice(indexOfFirstAlert, indexOfLastAlert);
+    const totalPages = Math.ceil(alerts.length / itemsPerPage);
+
+    const handlePageChange = (pageNumber: number) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
 
     return (
         <div className='space-y-6'>
@@ -503,131 +524,157 @@ export default function AlertsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className='divide-y divide-slate-200'>
-                        {alerts.map((alert) => (
-                            <div
-                                key={alert.id}
-                                className='p-6 hover:bg-slate-50 transition-colors'
-                            >
-                                <div className='flex items-start justify-between'>
-                                    <div className='flex items-start gap-4 flex-1'>
-                                        <div
-                                            className={`p-3 rounded-xl ${getSeverityStyle(
-                                                alert.severity
-                                            )}`}
-                                        >
-                                            {getAlertTypeIcon(alert.alertType)}
-                                        </div>
-                                        <div className='flex-1'>
-                                            <div className='flex items-center gap-3 mb-2'>
-                                                <span
-                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getSeverityStyle(
-                                                        alert.severity
-                                                    )}`}
-                                                >
-                                                    {alert.severity}
-                                                </span>
-                                                <span className='px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-800'>
-                                                    {alert.alertType.replace(
-                                                        /_/g,
-                                                        ' '
-                                                    )}
-                                                </span>
-                                                {alert.acknowledged && (
-                                                    <span className='px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800'>
-                                                        Acknowledged
-                                                    </span>
-                                                )}
-                                                {alert.resolved && (
-                                                    <span className='px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800'>
-                                                        Resolved
-                                                    </span>
+                    <>
+                        <div className='divide-y divide-slate-200'>
+                            {currentAlerts.map((alert) => (
+                                <div
+                                    key={alert.id}
+                                    className='p-6 hover:bg-slate-50 transition-colors'
+                                >
+                                    <div className='flex items-start justify-between'>
+                                        <div className='flex items-start gap-4 flex-1'>
+                                            <div
+                                                className={`p-3 rounded-xl ${getSeverityStyle(
+                                                    alert.severity
+                                                )}`}
+                                            >
+                                                {getAlertTypeIcon(
+                                                    alert.alertType
                                                 )}
                                             </div>
-                                            <p className='text-slate-800 font-medium mb-2'>
-                                                {alert.message}
-                                            </p>
-                                            <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
-                                                <div>
-                                                    <p className='text-slate-500'>
-                                                        Item
-                                                    </p>
-                                                    <p className='font-semibold'>
-                                                        {alert.itemMaster.name}
-                                                    </p>
-                                                    <p className='text-xs text-slate-500'>
-                                                        {alert.itemMaster.sku}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className='text-slate-500'>
-                                                        Warehouse
-                                                    </p>
-                                                    <p className='font-semibold'>
-                                                        {alert.warehouse.name}
-                                                    </p>
-                                                    <p className='text-xs text-slate-500'>
-                                                        {alert.warehouse.city}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className='text-slate-500'>
-                                                        Current / Threshold
-                                                    </p>
-                                                    <p className='font-semibold'>
-                                                        {alert.currentQty} /{' '}
-                                                        {alert.threshold}{' '}
-                                                        {
-                                                            alert.itemMaster
-                                                                .unitOfMeasure
-                                                        }
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className='text-slate-500'>
-                                                        Created
-                                                    </p>
-                                                    <p className='font-semibold'>
-                                                        {formatDate(
-                                                            alert.createdAt
+                                            <div className='flex-1'>
+                                                <div className='flex items-center gap-3 mb-2'>
+                                                    <span className='px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-white'>
+                                                        {alert.alertType.replace(
+                                                            /_/g,
+                                                            ' '
                                                         )}
-                                                    </p>
+                                                    </span>
+                                                    <span
+                                                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getSeverityStyle(
+                                                            alert.severity
+                                                        )}`}
+                                                    >
+                                                        {alert.severity}
+                                                    </span>
+                                                    {alert.acknowledged && (
+                                                        <span className='px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800'>
+                                                            Acknowledged
+                                                        </span>
+                                                    )}
+                                                    {alert.resolved && (
+                                                        <span className='px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800'>
+                                                            Resolved
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className='text-slate-800 font-medium mb-2'>
+                                                    {alert.message}
+                                                </p>
+                                                <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+                                                    <div>
+                                                        <p className='text-slate-500'>
+                                                            Item
+                                                        </p>
+                                                        <p className='font-semibold'>
+                                                            {
+                                                                alert.itemMaster
+                                                                    .name
+                                                            }
+                                                        </p>
+                                                        <p className='text-xs text-slate-500'>
+                                                            {
+                                                                alert.itemMaster
+                                                                    .sku
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className='text-slate-500'>
+                                                            Warehouse
+                                                        </p>
+                                                        <p className='font-semibold'>
+                                                            {
+                                                                alert.warehouse
+                                                                    .name
+                                                            }
+                                                        </p>
+                                                        <p className='text-xs text-slate-500'>
+                                                            {
+                                                                alert.warehouse
+                                                                    .city
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className='text-slate-500'>
+                                                            Current / Threshold
+                                                        </p>
+                                                        <p className='font-semibold'>
+                                                            {alert.currentQty} /{' '}
+                                                            {alert.threshold}{' '}
+                                                            {
+                                                                alert.itemMaster
+                                                                    .unitOfMeasure
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className='text-slate-500'>
+                                                            Created
+                                                        </p>
+                                                        <p className='font-semibold'>
+                                                            {formatDate(
+                                                                alert.createdAt
+                                                            )}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    {!alert.resolved && (
-                                        <div className='flex gap-2 ml-4'>
-                                            {!alert.acknowledged && (
+                                        {!alert.resolved && (
+                                            <div className='flex gap-2 ml-4'>
+                                                {!alert.acknowledged && (
+                                                    <button
+                                                        onClick={() =>
+                                                            handleAlertAction(
+                                                                alert.id,
+                                                                'acknowledge'
+                                                            )
+                                                        }
+                                                        className='px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-semibold'
+                                                    >
+                                                        Acknowledge
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() =>
                                                         handleAlertAction(
                                                             alert.id,
-                                                            'acknowledge'
+                                                            'resolve'
                                                         )
                                                     }
-                                                    className='px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-semibold'
+                                                    className='px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm font-semibold'
                                                 >
-                                                    Acknowledge
+                                                    Resolve
                                                 </button>
-                                            )}
-                                            <button
-                                                onClick={() =>
-                                                    handleAlertAction(
-                                                        alert.id,
-                                                        'resolve'
-                                                    )
-                                                }
-                                                className='px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm font-semibold'
-                                            >
-                                                Resolve
-                                            </button>
-                                        </div>
-                                    )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={alerts.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            showItemsPerPage={false}
+                        />
+                    </>
                 )}
             </div>
         </div>

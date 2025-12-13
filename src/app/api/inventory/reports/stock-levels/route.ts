@@ -23,9 +23,14 @@ export async function GET(request: NextRequest) {
         // Get all items with their inventory
         const items = await prisma.itemMaster.findMany({
             where: {
-                ...(category && { category }),
+                ...(category && {
+                    category: {
+                        name: category,
+                    },
+                }),
             },
             include: {
+                category: true,
                 inventoryItems: {
                     where: {
                         ...(warehouseId && { warehouseId }),
@@ -69,7 +74,7 @@ export async function GET(request: NextRequest) {
                 id: item.id,
                 sku: item.sku,
                 name: item.name,
-                category: item.category,
+                category: item.category?.name || 'Uncategorized',
                 barcode: item.barcode,
                 unitOfMeasure: item.unitOfMeasure,
                 totalStock,

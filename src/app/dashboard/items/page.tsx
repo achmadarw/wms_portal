@@ -676,7 +676,10 @@ export default function ItemsPage() {
                                 UOM
                             </th>
                             <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
-                                Stock
+                                Stock & Limits
+                            </th>
+                            <th className='px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider'>
+                                Reorder Info
                             </th>
                             {/* Pricing columns - hide for OPERATOR */}
                             {(userRole === 'ADMIN' ||
@@ -815,18 +818,42 @@ export default function ItemsPage() {
                                                     Avail: {availableStock}
                                                 </div>
                                             )}
+                                            <div className='text-xs text-slate-500 mt-1'>
+                                                Min: {item.minStockLevel} | Max:{' '}
+                                                {item.maxStockLevel || '-'}
+                                            </div>
+                                        </td>
+                                        <td className='px-6 py-4 whitespace-nowrap'>
+                                            <div className='text-sm text-slate-900'>
+                                                <div className='flex items-center gap-1 mb-1'>
+                                                    <span className='text-xs text-slate-500'>
+                                                        Reorder Point:
+                                                    </span>
+                                                    <span className='font-medium'>
+                                                        {item.reorderPoint}
+                                                    </span>
+                                                </div>
+                                                <div className='flex items-center gap-1'>
+                                                    <span className='text-xs text-slate-500'>
+                                                        Qty:
+                                                    </span>
+                                                    <span className='font-medium text-blue-700'>
+                                                        {item.reorderQty}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </td>
                                         {/* Pricing cells - hide for OPERATOR */}
                                         {(userRole === 'ADMIN' ||
                                             userRole === 'SUPERVISOR') && (
                                             <>
                                                 <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                                                    $
+                                                    Rp
                                                     {item.unitCost.toLocaleString()}
                                                 </td>
                                                 <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
                                                     {item.sellingPrice
-                                                        ? `$${item.sellingPrice.toLocaleString()}`
+                                                        ? `Rp${item.sellingPrice.toLocaleString()}`
                                                         : '-'}
                                                 </td>
                                             </>
@@ -1385,7 +1412,7 @@ export default function ItemsPage() {
 
                                     <div>
                                         <label className='block text-sm font-medium text-gray-700 mb-2'>
-                                            Unit Cost ($)
+                                            Unit Cost (Rp)
                                         </label>
                                         <input
                                             type='number'
@@ -1404,7 +1431,7 @@ export default function ItemsPage() {
 
                                     <div>
                                         <label className='block text-sm font-medium text-gray-700 mb-2'>
-                                            Selling Price ($)
+                                            Selling Price (Rp)
                                         </label>
                                         <input
                                             type='number'
@@ -1880,7 +1907,7 @@ export default function ItemsPage() {
 
                                     <div>
                                         <label className='block text-sm font-medium text-gray-700 mb-2'>
-                                            Unit Cost ($)
+                                            Unit Cost (Rp)
                                         </label>
                                         <input
                                             type='number'
@@ -1898,7 +1925,7 @@ export default function ItemsPage() {
 
                                     <div>
                                         <label className='block text-sm font-medium text-gray-700 mb-2'>
-                                            Selling Price ($)
+                                            Selling Price (Rp)
                                         </label>
                                         <input
                                             type='number'
@@ -2120,3 +2147,4 @@ export default function ItemsPage() {
         </div>
     );
 }
+

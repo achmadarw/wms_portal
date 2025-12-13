@@ -105,6 +105,24 @@ export async function PATCH(
                 );
             }
 
+            // Auto-check stock levels and generate alerts after processing movement
+            try {
+                console.log(
+                    '[ALERT] Auto-checking stock levels after processing movement...'
+                );
+                const { checkStockLevelsAndGenerateAlerts } = await import(
+                    '@/lib/alert-checker'
+                );
+                await checkStockLevelsAndGenerateAlerts();
+                console.log('[ALERT] Stock level check completed');
+            } catch (alertError) {
+                console.error(
+                    '[ALERT] Error checking stock levels:',
+                    alertError
+                );
+                // Don't fail the movement if alert check fails
+            }
+
             return NextResponse.json({
                 message: result.message,
                 movement: result.movement,
