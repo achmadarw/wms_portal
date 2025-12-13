@@ -103,6 +103,7 @@ export default function MovementsPage() {
     const [items, setItems] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [bins, setBins] = useState<any[]>([]);
+    const [toBins, setToBins] = useState<any[]>([]); // Separate state for To Bin dropdown
     const [availableStock, setAvailableStock] = useState<number | null>(null);
     const [loadingStock, setLoadingStock] = useState(false);
     // For RETURN - max returnable quantity
@@ -235,45 +236,51 @@ export default function MovementsPage() {
     useEffect(() => {
         const fetchBins = async () => {
             if (createForm.warehouseId) {
+                // For all movement types, bins are already filtered from available-bins API
+                // Just extract bins from the selected warehouse
+                console.log(
+                    '[DEBUG] Looking for warehouse:',
+                    createForm.warehouseId
+                );
+                console.log(
+                    '[DEBUG] Available warehouses:',
+                    warehouses.map((w: any) => ({
+                        id: w.id,
+                        name: w.name,
+                        binsCount: w.bins?.length,
+                    }))
+                );
+
+                const selectedWarehouse = warehouses.find(
+                    (w: any) => w.id === createForm.warehouseId
+                );
+                if (selectedWarehouse) {
+                    console.log(
+                        '[DEBUG] Using filtered bins:',
+                        selectedWarehouse.bins
+                    );
+                    setBins(selectedWarehouse.bins || []);
+                } else {
+                    console.log(
+                        '[DEBUG] Warehouse not found in warehouses list'
+                    );
+                    setBins([]);
+                }
+            } else {
+                setBins([]);
+            }
+        };
+        fetchBins();
+    }, [createForm.warehouseId, createForm.type, warehouses]);
+
+    // Fetch all bins for To Bin dropdown on TRANSFER
+    useEffect(() => {
+        const fetchToBins = async () => {
+            if (createForm.type === 'TRANSFER' && createForm.warehouseId) {
                 try {
-                    // For RETURN movement, bins are already filtered from available-bins API
-                    // Just extract bins from the selected warehouse
-                    if (createForm.type === 'RETURN') {
-                        console.log(
-                            '[DEBUG] RETURN - Looking for warehouse:',
-                            createForm.warehouseId
-                        );
-                        console.log(
-                            '[DEBUG] Available warehouses:',
-                            warehouses.map((w: any) => ({
-                                id: w.id,
-                                name: w.name,
-                                binsCount: w.bins?.length,
-                            }))
-                        );
-
-                        const selectedWarehouse = warehouses.find(
-                            (w: any) => w.id === createForm.warehouseId
-                        );
-                        if (selectedWarehouse) {
-                            console.log(
-                                '[DEBUG] Using filtered bins for RETURN:',
-                                selectedWarehouse.bins
-                            );
-                            setBins(selectedWarehouse.bins || []);
-                        } else {
-                            console.log(
-                                '[DEBUG] Warehouse not found in warehouses list'
-                            );
-                            setBins([]);
-                        }
-                        return;
-                    }
-
-                    // For other movement types, fetch all bins from warehouse
                     const token = localStorage.getItem('accessToken');
                     console.log(
-                        '[DEBUG] Fetching bins for warehouse:',
+                        '[DEBUG] TRANSFER - Fetching all bins for To Bin in warehouse:',
                         createForm.warehouseId
                     );
                     const binsRes = await fetch(
@@ -288,27 +295,28 @@ export default function MovementsPage() {
                     }
                     if (binsRes.ok) {
                         const binsData = await binsRes.json();
-                        console.log('[DEBUG] Bins response:', binsData);
                         console.log(
-                            '[DEBUG] Bins array length:',
+                            '[DEBUG] TRANSFER - To Bins response:',
                             binsData.bins?.length
                         );
-                        setBins(binsData.bins || []);
+                        setToBins(binsData.bins || []);
                     } else {
                         console.error(
-                            '[API] Failed to fetch bins:',
+                            '[API] Failed to fetch to bins:',
                             binsRes.status
                         );
+                        setToBins([]);
                     }
                 } catch (error) {
-                    console.error('[API] Error fetching bins:', error);
+                    console.error('[API] Error fetching to bins:', error);
+                    setToBins([]);
                 }
             } else {
-                setBins([]);
+                setToBins([]);
             }
         };
-        fetchBins();
-    }, [createForm.warehouseId, createForm.type, warehouses]);
+        fetchToBins();
+    }, [createForm.warehouseId, createForm.type]);
 
     // Fetch available stock when item and warehouse are selected (for OUTBOUND/TRANSFER/DAMAGE)
     useEffect(() => {
@@ -2017,18 +2025,31 @@ Reference: ${result.movement.referenceNo}`,
                                                 }
                                                 disabled={
                                                     !createForm.warehouseId ||
-                                                    bins.length === 0
+                                                    (createForm.type ===
+                                                    'TRANSFER'
+                                                        ? toBins.length === 0
+                                                        : bins.length === 0)
                                                 }
                                                 className='w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-medium text-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed'
                                             >
                                                 <option value=''>
                                                     {!createForm.warehouseId
                                                         ? 'Select warehouse first...'
-                                                        : bins.length === 0
+                                                        : (
+                                                              createForm.type ===
+                                                              'TRANSFER'
+                                                                  ? toBins.length ===
+                                                                    0
+                                                                  : bins.length ===
+                                                                    0
+                                                          )
                                                         ? 'No bins available...'
                                                         : 'Select destination bin...'}
                                                 </option>
-                                                {bins.map((bin) => (
+                                                {(createForm.type === 'TRANSFER'
+                                                    ? toBins
+                                                    : bins
+                                                ).map((bin) => (
                                                     <option
                                                         key={bin.id}
                                                         value={bin.code}
