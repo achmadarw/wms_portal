@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
     typescript: {
         tsconfigPath: './tsconfig.json',
     },
+    experimental: {
+        optimizePackageImports: ['lucide-react', '@/components/icons'],
+    },
+    compiler: {
+        removeConsole: process.env.NODE_ENV === 'production',
+    },
+    // Optimize bundle size
+    swcMinify: true,
 };
 
 export default nextConfig;

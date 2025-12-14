@@ -3,8 +3,36 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import NProgress from 'nprogress';
-import DashboardSkeleton from '@/components/DashboardSkeleton';
+import dynamic from 'next/dynamic';
+
+// Import components langsung (tidak perlu dynamic untuk small components)
+import StatCard from '@/components/StatCard';
+import QuickActionCard from '@/components/QuickActionCard';
+import ActivityItem from '@/components/ActivityItem';
+import LowStockItem from '@/components/LowStockItem';
+import StatusItem from '@/components/StatusItem';
+
+// Only skeleton needs dynamic import
+const DashboardSkeleton = dynamic(
+    () => import('@/components/DashboardSkeleton'),
+    { ssr: false }
+);
+
+// Icons di-import secara normal karena ringan
+import {
+    WarehouseIcon,
+    BoxIcon,
+    MovementIcon,
+    UsersIcon,
+    LightningIcon,
+    InboundIcon,
+    ReportIcon,
+    SettingsIcon,
+    ClockIcon,
+    AlertIcon,
+    CheckCircleIcon,
+    ArrowRightIcon,
+} from '@/components/icons';
 
 interface DashboardStats {
     totalWarehouses: number;
@@ -77,14 +105,12 @@ export default function DashboardPage() {
 
     const fetchDashboardData = async () => {
         try {
-            NProgress.start();
             setLoading(true);
             const token = localStorage.getItem('accessToken');
 
             if (!token) {
                 console.error('No access token found');
                 setLoading(false);
-                NProgress.done();
                 return;
             }
 
@@ -115,7 +141,6 @@ export default function DashboardPage() {
             console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
-            NProgress.done();
         }
     };
 
@@ -161,81 +186,25 @@ export default function DashboardPage() {
                     <StatCard
                         title='Total Warehouses'
                         value={stats.totalWarehouses}
-                        icon={
-                            <svg
-                                className='w-8 h-8'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-                                />
-                            </svg>
-                        }
+                        icon={<WarehouseIcon className='w-8 h-8' />}
                         gradient='from-blue-500 to-blue-600'
                     />
                     <StatCard
                         title='Total Items'
                         value={stats.totalItems.toLocaleString()}
-                        icon={
-                            <svg
-                                className='w-8 h-8'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-                                />
-                            </svg>
-                        }
+                        icon={<BoxIcon className='w-8 h-8' />}
                         gradient='from-emerald-500 to-emerald-600'
                     />
                     <StatCard
                         title='Total Movements'
                         value={stats.totalMovements}
-                        icon={
-                            <svg
-                                className='w-8 h-8'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                                />
-                            </svg>
-                        }
+                        icon={<MovementIcon className='w-8 h-8' />}
                         gradient='from-amber-500 to-amber-600'
                     />
                     <StatCard
                         title='Active Users'
                         value={stats.activeUsers}
-                        icon={
-                            <svg
-                                className='w-8 h-8'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'
-                                />
-                            </svg>
-                        }
+                        icon={<UsersIcon className='w-8 h-8' />}
                         gradient='from-purple-500 to-purple-600'
                     />
                 </div>
@@ -245,145 +214,43 @@ export default function DashboardPage() {
                     <div className='lg:col-span-2'>
                         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8'>
                             <h2 className='text-xl font-bold text-slate-900 mb-6 flex items-center gap-2'>
-                                <svg
-                                    className='w-6 h-6 text-primary-600'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M13 10V3L4 14h7v7l9-11h-7z'
-                                    />
-                                </svg>
+                                <LightningIcon className='w-6 h-6 text-primary-600' />
                                 Quick Actions
                             </h2>
                             <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
                                 <QuickActionCard
                                     title='Receive Stock'
-                                    icon={
-                                        <svg
-                                            className='w-6 h-6'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                                            />
-                                        </svg>
-                                    }
+                                    icon={<InboundIcon className='w-6 h-6' />}
                                     color='bg-blue-50 text-blue-700 hover:bg-blue-100'
                                     href='/dashboard/movements'
                                 />
                                 <QuickActionCard
                                     title='Dispatch Items'
-                                    icon={
-                                        <svg
-                                            className='w-6 h-6'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                                            />
-                                        </svg>
-                                    }
+                                    icon={<InboundIcon className='w-6 h-6' />}
                                     color='bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                                     href='/dashboard/movements'
                                 />
                                 <QuickActionCard
                                     title='Stock Transfer'
-                                    icon={
-                                        <svg
-                                            className='w-6 h-6'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                                            />
-                                        </svg>
-                                    }
+                                    icon={<MovementIcon className='w-6 h-6' />}
                                     color='bg-purple-50 text-purple-700 hover:bg-purple-100'
                                     href='/dashboard/movements'
                                 />
                                 <QuickActionCard
                                     title='View Reports'
-                                    icon={
-                                        <svg
-                                            className='w-6 h-6'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                                            />
-                                        </svg>
-                                    }
+                                    icon={<ReportIcon className='w-6 h-6' />}
                                     color='bg-amber-50 text-amber-700 hover:bg-amber-100'
                                     href='/inventory/reports'
                                 />
                                 <QuickActionCard
                                     title='Manage Users'
-                                    icon={
-                                        <svg
-                                            className='w-6 h-6'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'
-                                            />
-                                        </svg>
-                                    }
+                                    icon={<UsersIcon className='w-6 h-6' />}
                                     color='bg-rose-50 text-rose-700 hover:bg-rose-100'
                                     href='/dashboard/users'
                                 />
                                 <QuickActionCard
                                     title='Settings'
-                                    icon={
-                                        <svg
-                                            className='w-6 h-6'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
-                                            />
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                                            />
-                                        </svg>
-                                    }
+                                    icon={<SettingsIcon className='w-6 h-6' />}
                                     color='bg-slate-50 text-slate-700 hover:bg-slate-100'
                                     href='/dashboard/users'
                                 />
@@ -393,19 +260,7 @@ export default function DashboardPage() {
                         {/* Recent Activity */}
                         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6'>
                             <h2 className='text-xl font-bold text-slate-900 mb-6 flex items-center gap-2'>
-                                <svg
-                                    className='w-6 h-6 text-primary-600'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                                    />
-                                </svg>
+                                <ClockIcon className='w-6 h-6 text-primary-600' />
                                 Recent Activity
                             </h2>
                             {recentActivities.length === 0 ? (
@@ -443,50 +298,14 @@ export default function DashboardPage() {
                         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8'>
                             <Link href='/dashboard/alerts'>
                                 <h2 className='text-xl font-bold text-slate-900 mb-6 flex items-center gap-2 hover:text-primary-600 transition-colors cursor-pointer'>
-                                    <svg
-                                        className='w-6 h-6 text-amber-600'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-                                        />
-                                    </svg>
+                                    <AlertIcon className='w-6 h-6 text-amber-600' />
                                     Low Stock Alert ({stats.lowStockCount})
-                                    <svg
-                                        className='w-4 h-4 ml-auto'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M9 5l7 7-7 7'
-                                        />
-                                    </svg>
+                                    <ArrowRightIcon className='w-4 h-4 ml-auto' />
                                 </h2>
                             </Link>
                             {lowStockItems.length === 0 ? (
                                 <div className='text-center py-8'>
-                                    <svg
-                                        className='w-12 h-12 text-green-500 mx-auto mb-3'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                                        />
-                                    </svg>
+                                    <CheckCircleIcon className='w-12 h-12 text-green-500 mx-auto mb-3' />
                                     <p className='text-slate-600 font-medium'>
                                         All items are well stocked!
                                     </p>
@@ -519,19 +338,7 @@ export default function DashboardPage() {
                         {/* System Status */}
                         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6'>
                             <h2 className='text-xl font-bold text-slate-900 mb-2 flex items-center gap-2'>
-                                <svg
-                                    className='w-6 h-6 text-emerald-600'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                                    />
-                                </svg>
+                                <CheckCircleIcon className='w-6 h-6 text-emerald-600' />
                                 System Status
                             </h2>
                             <p className='text-xs text-slate-500 mb-4'>
@@ -558,344 +365,6 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    );
-}
-
-interface StatCardProps {
-    title: string;
-    value: number | string;
-    trend?: string;
-    trendUp?: boolean;
-    icon: React.ReactNode;
-    gradient: string;
-}
-
-function StatCard({
-    title,
-    value,
-    trend,
-    trendUp,
-    icon,
-    gradient,
-}: StatCardProps) {
-    return (
-        <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow'>
-            <div className='flex items-start justify-between mb-4'>
-                <div
-                    className={`p-3 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg`}
-                >
-                    {icon}
-                </div>
-                {trend && trendUp !== undefined && (
-                    <div
-                        className={`flex items-center gap-1 text-sm font-semibold ${
-                            trendUp ? 'text-emerald-600' : 'text-red-600'
-                        }`}
-                    >
-                        <svg
-                            className={`w-4 h-4 ${trendUp ? '' : 'rotate-180'}`}
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M5 10l7-7m0 0l7 7m-7-7v18'
-                            />
-                        </svg>
-                        {trend}
-                    </div>
-                )}
-            </div>
-            <div>
-                <p className='text-sm text-slate-600 mb-1'>{title}</p>
-                <p className='text-3xl font-bold text-slate-900'>{value}</p>
-            </div>
-        </div>
-    );
-}
-
-interface QuickActionCardProps {
-    title: string;
-    icon: React.ReactNode;
-    color: string;
-    href: string;
-}
-
-function QuickActionCard({ title, icon, color, href }: QuickActionCardProps) {
-    return (
-        <Link
-            href={href}
-            className={`${color} rounded-xl p-4 flex flex-col items-center text-center gap-3 transition-all hover:scale-105 hover:shadow-md`}
-        >
-            {icon}
-            <span className='font-semibold text-sm'>{title}</span>
-        </Link>
-    );
-}
-
-interface ActivityItemProps {
-    type:
-        | 'inbound'
-        | 'outbound'
-        | 'transfer'
-        | 'adjustment'
-        | 'return'
-        | 'receive'
-        | 'dispatch'
-        | 'adjust'
-        | 'damage';
-    action: string;
-    details: string;
-    time: string;
-    user: string;
-}
-
-function ActivityItem({
-    type,
-    action,
-    details,
-    time,
-    user,
-}: ActivityItemProps) {
-    const colors = {
-        inbound: 'bg-blue-100 text-blue-700',
-        receive: 'bg-blue-100 text-blue-700',
-        outbound: 'bg-emerald-100 text-emerald-700',
-        dispatch: 'bg-emerald-100 text-emerald-700',
-        transfer: 'bg-purple-100 text-purple-700',
-        adjustment: 'bg-amber-100 text-amber-700',
-        adjust: 'bg-amber-100 text-amber-700',
-        return: 'bg-orange-100 text-orange-700',
-        damage: 'bg-red-100 text-red-700',
-    };
-
-    const icons = {
-        inbound: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                />
-            </svg>
-        ),
-        receive: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                />
-            </svg>
-        ),
-        outbound: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                />
-            </svg>
-        ),
-        dispatch: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                />
-            </svg>
-        ),
-        transfer: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                />
-            </svg>
-        ),
-        adjustment: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-                />
-            </svg>
-        ),
-        adjust: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-                />
-            </svg>
-        ),
-        return: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6'
-                />
-            </svg>
-        ),
-        damage: (
-            <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-                />
-            </svg>
-        ),
-    };
-
-    return (
-        <div className='flex items-start gap-4 pb-4 border-b last:border-b-0 border-slate-100'>
-            <div className={`p-2 rounded-lg ${colors[type]} flex-shrink-0`}>
-                {icons[type]}
-            </div>
-            <div className='flex-1 min-w-0'>
-                <p className='font-semibold text-slate-900 text-sm'>{action}</p>
-                <p className='text-sm text-slate-600 truncate'>{details}</p>
-                <div className='flex items-center gap-2 mt-1'>
-                    <span className='text-xs text-slate-500'>{user}</span>
-                    <span className='text-xs text-slate-400'>•</span>
-                    <span className='text-xs text-slate-500'>{time}</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-interface LowStockItemProps {
-    sku: string;
-    name: string;
-    current: number;
-    minimum: number;
-    percentage: number;
-}
-
-function LowStockItem({
-    sku,
-    name,
-    current,
-    minimum,
-    percentage,
-}: LowStockItemProps) {
-    const getColor = (pct: number) => {
-        if (pct < 30) return 'bg-red-500';
-        if (pct < 50) return 'bg-amber-500';
-        return 'bg-yellow-500';
-    };
-
-    return (
-        <div className='pb-4 border-b last:border-b-0 border-slate-100'>
-            <div className='flex items-center justify-between mb-2'>
-                <div>
-                    <p className='font-semibold text-slate-900 text-sm'>
-                        {name}
-                    </p>
-                    <p className='text-xs text-slate-500'>{sku}</p>
-                </div>
-                <span className='text-sm font-semibold text-slate-700'>
-                    {current}/{minimum}
-                </span>
-            </div>
-            <div className='w-full bg-slate-100 rounded-full h-2'>
-                <div
-                    className={`h-2 rounded-full ${getColor(
-                        percentage
-                    )} transition-all`}
-                    style={{ width: `${percentage}%` }}
-                ></div>
-            </div>
-        </div>
-    );
-}
-
-interface StatusItemProps {
-    label: string;
-    status: 'operational' | 'warning' | 'error';
-}
-
-function StatusItem({ label, status }: StatusItemProps) {
-    const colors = {
-        operational: 'bg-emerald-500',
-        warning: 'bg-amber-500',
-        error: 'bg-red-500',
-    };
-
-    return (
-        <div className='flex items-center justify-between py-2'>
-            <span className='text-sm text-slate-700'>{label}</span>
-            <div className='flex items-center gap-2'>
-                <div className={`w-2 h-2 rounded-full ${colors[status]}`}></div>
-                <span className='text-xs text-slate-600 capitalize'>
-                    {status}
-                </span>
             </div>
         </div>
     );

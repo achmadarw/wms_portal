@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
                 inventoryItems: {
                     where: warehouseId ? { warehouseId } : undefined,
                     include: {
-                        warehouse: { select: { id: true, name: true, code: true } },
+                        warehouse: {
+                            select: { id: true, name: true, code: true },
+                        },
                         bin: { select: { id: true, code: true, name: true } },
                     },
                 },
@@ -52,20 +54,33 @@ export async function GET(request: NextRequest) {
 
         // Calculate stock levels
         const itemsWithStock = items.map((item) => {
-            const totalStock = item.inventoryItems.reduce((sum, inv) => sum + inv.quantity, 0);
-            const availableStock = item.inventoryItems.reduce((sum, inv) => sum + inv.availableQty, 0);
-            const reservedStock = item.inventoryItems.reduce((sum, inv) => sum + inv.reservedQty, 0);
-            
+            const totalStock = item.inventoryItems.reduce(
+                (sum, inv) => sum + inv.quantity,
+                0
+            );
+            const availableStock = item.inventoryItems.reduce(
+                (sum, inv) => sum + inv.availableQty,
+                0
+            );
+            const reservedStock = item.inventoryItems.reduce(
+                (sum, inv) => sum + inv.reservedQty,
+                0
+            );
+
             return {
                 ...item,
                 totalStock,
                 availableStock,
                 reservedStock,
                 isLowStock: totalStock <= item.reorderPoint,
-                stockStatus: totalStock === 0 ? 'OUT_OF_STOCK' 
-                    : totalStock <= item.reorderPoint ? 'LOW_STOCK'
-                    : totalStock >= (item.maxStockLevel || Infinity) ? 'OVERSTOCK'
-                    : 'IN_STOCK',
+                stockStatus:
+                    totalStock === 0
+                        ? 'OUT_OF_STOCK'
+                        : totalStock <= item.reorderPoint
+                        ? 'LOW_STOCK'
+                        : totalStock >= (item.maxStockLevel || Infinity)
+                        ? 'OVERSTOCK'
+                        : 'IN_STOCK',
             };
         });
 
@@ -102,6 +117,7 @@ export async function POST(request: NextRequest) {
             name,
             description,
             category,
+            categoryId,
             unitOfMeasure,
             weight,
             dimensions,
@@ -116,8 +132,11 @@ export async function POST(request: NextRequest) {
             imageUrl,
         } = await request.json();
 
-        if (!sku || !name || !category) {
-            return errorResponse('SKU, name, and category are required', 400);
+        // Support both category (legacy) and categoryId (new)
+        const finalCategoryId = categoryId || category;
+
+        if (!sku || !name) {
+            return errorResponse('SKU and name are required', 400);
         }
 
         // Check if SKU already exists
@@ -146,7 +165,7 @@ export async function POST(request: NextRequest) {
                 barcode,
                 name,
                 description,
-                category,
+                categoryId: finalCategoryId,
                 unitOfMeasure: unitOfMeasure || 'PCS',
                 weight: weight ? parseFloat(weight) : null,
                 dimensions,
