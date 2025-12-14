@@ -14,6 +14,11 @@ import {
 } from '@/components/icons';
 import Pagination from '@/components/Pagination';
 import { withProgress } from '@/lib/progress';
+import {
+    formatNumber,
+    formatCompactCurrency,
+    formatCurrency,
+} from '@/lib/formatNumber';
 
 interface InventoryItem {
     id: string;
@@ -212,15 +217,6 @@ export default function InventoryPage() {
         }
     };
 
-    const formatCurrency = (value: number | null) => {
-        if (value === null) return '-';
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(value);
-    };
-
     const handleFilterChange = (key: string, value: string) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
     };
@@ -288,8 +284,11 @@ export default function InventoryPage() {
                             <p className='text-sm font-medium text-slate-600'>
                                 Total Quantity
                             </p>
-                            <p className='text-2xl font-bold text-slate-800'>
-                                {summary.totalQuantity.toLocaleString()}
+                            <p
+                                className='text-2xl font-bold text-slate-800'
+                                title={formatNumber(summary.totalQuantity)}
+                            >
+                                {formatNumber(summary.totalQuantity)}
                             </p>
                         </div>
                     </div>
@@ -305,8 +304,11 @@ export default function InventoryPage() {
                             <p className='text-sm font-medium text-slate-600'>
                                 Total Value
                             </p>
-                            <p className='text-2xl font-bold text-slate-800'>
-                                {formatCurrency(summary.totalValue)}
+                            <p
+                                className='text-2xl font-bold text-slate-800'
+                                title={formatCurrency(summary.totalValue)}
+                            >
+                                {formatCompactCurrency(summary.totalValue)}
                             </p>
                         </div>
                     </div>
@@ -595,7 +597,9 @@ export default function InventoryPage() {
                                             </td>
                                             <td className='px-6 py-4 text-right'>
                                                 <span className='font-semibold text-slate-800'>
-                                                    {item.quantity.toLocaleString()}
+                                                    {formatNumber(
+                                                        item.quantity
+                                                    )}
                                                 </span>
                                                 <span className='text-sm text-slate-500 ml-1'>
                                                     {
@@ -606,12 +610,16 @@ export default function InventoryPage() {
                                             </td>
                                             <td className='px-6 py-4 text-right'>
                                                 <span className='font-medium text-orange-600'>
-                                                    {item.reservedQty.toLocaleString()}
+                                                    {formatNumber(
+                                                        item.reservedQty
+                                                    )}
                                                 </span>
                                             </td>
                                             <td className='px-6 py-4 text-right'>
                                                 <span className='font-semibold text-green-600'>
-                                                    {item.availableQty.toLocaleString()}
+                                                    {formatNumber(
+                                                        item.availableQty
+                                                    )}
                                                 </span>
                                             </td>
                                             <td className='px-6 py-4'>
@@ -624,9 +632,16 @@ export default function InventoryPage() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className='px-6 py-4 text-right'>
+                                            <td
+                                                className='px-6 py-4 text-right'
+                                                title={formatCurrency(
+                                                    item.quantity *
+                                                        (item.itemMaster
+                                                            .unitCost || 0)
+                                                )}
+                                            >
                                                 <span className='font-semibold text-slate-800'>
-                                                    {formatCurrency(
+                                                    {formatCompactCurrency(
                                                         item.quantity *
                                                             (item.itemMaster
                                                                 .unitCost || 0)

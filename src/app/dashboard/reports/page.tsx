@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import Pagination from '@/components/Pagination';
 import { ChartIcon } from '@/components/icons';
+import {
+    formatNumber,
+    formatCompactCurrency,
+    getNumberFontSize,
+} from '@/lib/formatNumber';
 
 interface StockReport {
     id: string;
@@ -210,8 +215,15 @@ export default function ReportsPage() {
                         <div className='text-sm font-semibold text-primary-100'>
                             Total Value
                         </div>
-                        <div className='text-2xl font-bold mt-2'>
-                            Rp{stockSummary.totalStockValue.toFixed(2)}
+                        <div
+                            className={`font-bold mt-2 ${getNumberFontSize(
+                                stockSummary.totalStockValue
+                            )}`}
+                            title={formatNumber(stockSummary.totalStockValue)}
+                        >
+                            {formatCompactCurrency(
+                                stockSummary.totalStockValue
+                            )}
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
@@ -506,9 +518,15 @@ export default function ReportsPage() {
                                                     {item.minStockLevel} /{' '}
                                                     {item.maxStockLevel || '-'}
                                                 </td>
-                                                <td className='px-6 py-4 font-medium'>
-                                                    Rp
-                                                    {item.stockValue.toFixed(2)}
+                                                <td
+                                                    className='px-6 py-4 font-medium'
+                                                    title={formatNumber(
+                                                        item.stockValue
+                                                    )}
+                                                >
+                                                    {formatCompactCurrency(
+                                                        item.stockValue
+                                                    )}
                                                 </td>
                                                 <td className='px-6 py-4'>
                                                     <span

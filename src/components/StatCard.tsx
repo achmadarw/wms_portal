@@ -1,5 +1,10 @@
 import React from 'react';
 import { ArrowUpIcon } from './icons';
+import {
+    formatNumber,
+    formatCompactNumber,
+    getNumberFontSize,
+} from '@/lib/formatNumber';
 
 interface StatCardProps {
     title: string;
@@ -8,6 +13,7 @@ interface StatCardProps {
     trendUp?: boolean;
     icon: React.ReactNode;
     gradient: string;
+    formatType?: 'none' | 'number' | 'compact'; // Format type
 }
 
 export default function StatCard({
@@ -17,7 +23,32 @@ export default function StatCard({
     trendUp,
     icon,
     gradient,
+    formatType = 'compact', // Default to compact
 }: StatCardProps) {
+    // Format value based on type
+    const getFormattedValue = () => {
+        if (formatType === 'none') return value;
+        if (typeof value === 'number') {
+            return formatType === 'compact'
+                ? formatCompactNumber(value)
+                : formatNumber(value);
+        }
+        return value;
+    };
+
+    // Get full value for tooltip
+    const getFullValue = () => {
+        if (typeof value === 'number') {
+            return formatNumber(value);
+        }
+        return value.toString();
+    };
+
+    const formattedValue = getFormattedValue();
+    const fullValue = getFullValue();
+    const fontSize =
+        typeof value === 'number' ? getNumberFontSize(value) : 'text-3xl';
+
     return (
         <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow'>
             <div className='flex items-start justify-between mb-4'>
@@ -41,7 +72,12 @@ export default function StatCard({
             </div>
             <div>
                 <p className='text-sm text-slate-600 mb-1'>{title}</p>
-                <p className='text-3xl font-bold text-slate-900'>{value}</p>
+                <p
+                    className={`${fontSize} font-bold text-slate-900`}
+                    title={formattedValue !== fullValue ? fullValue : undefined}
+                >
+                    {formattedValue}
+                </p>
             </div>
         </div>
     );

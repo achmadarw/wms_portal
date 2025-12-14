@@ -22,6 +22,11 @@ import {
     ChevronRightDoubleIcon,
     ErrorIcon,
 } from '@/components/icons';
+import {
+    formatNumber,
+    formatCompactCurrency,
+    formatCurrency,
+} from '@/lib/formatNumber';
 
 interface Item {
     id: string;
@@ -771,13 +776,30 @@ export default function ItemsPage() {
                                         {(userRole === 'ADMIN' ||
                                             userRole === 'SUPERVISOR') && (
                                             <>
-                                                <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                                                    Rp
-                                                    {item.unitCost.toLocaleString()}
+                                                <td
+                                                    className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
+                                                    title={formatCurrency(
+                                                        item.unitCost
+                                                    )}
+                                                >
+                                                    {formatCompactCurrency(
+                                                        item.unitCost
+                                                    )}
                                                 </td>
-                                                <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                                                <td
+                                                    className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
+                                                    title={
+                                                        item.sellingPrice
+                                                            ? formatCurrency(
+                                                                  item.sellingPrice
+                                                              )
+                                                            : undefined
+                                                    }
+                                                >
                                                     {item.sellingPrice
-                                                        ? `Rp${item.sellingPrice.toLocaleString()}`
+                                                        ? formatCompactCurrency(
+                                                              item.sellingPrice
+                                                          )
                                                         : '-'}
                                                 </td>
                                             </>
