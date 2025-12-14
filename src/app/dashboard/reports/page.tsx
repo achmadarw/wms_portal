@@ -195,151 +195,136 @@ export default function ReportsPage() {
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            {stockSummary && activeReport === 'stock' && (
-                <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-slideUp'>
+            {/* Stats Cards - Above Tabs */}
+            {activeReport === 'stock' && stockSummary && (
+                <div className='grid grid-cols-1 md:grid-cols-5 gap-6 animate-slideUp'>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Total Items
-                                </div>
-                                <div className='text-3xl font-bold text-slate-900 mt-2'>
-                                    {stockSummary.totalItems || 0}
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Total Items
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-slate-900'>
+                            {stockSummary.totalItems}
+                        </div>
+                    </div>
+                    <div className='bg-gradient-to-br from-primary-600 to-primary-700 p-6 rounded-2xl shadow-lg text-white hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='text-sm font-semibold text-primary-100'>
+                            Total Value
+                        </div>
+                        <div className='text-2xl font-bold mt-2'>
+                            Rp{stockSummary.totalStockValue.toFixed(2)}
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Low Stock
-                                </div>
-                                <div className='text-3xl font-bold text-orange-600 mt-2'>
-                                    {stockSummary.lowStockCount || 0}
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            In Stock
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-green-600'>
+                            {stockSummary.itemsInStock}
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Out of Stock
-                                </div>
-                                <div className='text-3xl font-bold text-red-600 mt-2'>
-                                    {stockSummary.outOfStockCount || 0}
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Low Stock
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-orange-600'>
+                            {stockSummary.itemsLowStock}
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Total Value
-                                </div>
-                                <div className='text-3xl font-bold text-green-600 mt-2'>
-                                    ${stockSummary.totalValue?.toFixed(0) || 0}
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Out of Stock
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-red-600'>
+                            {stockSummary.itemsOutOfStock}
                         </div>
                     </div>
                 </div>
             )}
 
-            {movementSummary && activeReport === 'movements' && (
+            {activeReport === 'movements' && movementSummary && (
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-slideUp'>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Total Movements
-                                </div>
-                                <div className='text-3xl font-bold text-slate-900 mt-2'>
-                                    {movementSummary.summary.totalMovements}
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Total Movements
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-slate-900'>
+                            {movementSummary.summary.totalMovements}
+                        </div>
+                        <div className='text-xs text-slate-500 mt-2'>
+                            Avg:{' '}
+                            {movementSummary.summary.averageMovementsPerDay.toFixed(
+                                1
+                            )}
+                            /day
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Inbound
-                                </div>
-                                <div className='text-3xl font-bold text-green-600 mt-2'>
-                                    {
-                                        movementSummary.summary.byType.inbound
-                                            .count
-                                    }
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Inbound
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-green-600'>
+                            {movementSummary.summary.byType.inbound.count}
+                        </div>
+                        <div className='text-xs text-slate-500 mt-2'>
+                            +{movementSummary.summary.byType.inbound.quantity}{' '}
+                            units
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Outbound
-                                </div>
-                                <div className='text-3xl font-bold text-red-600 mt-2'>
-                                    {
-                                        movementSummary.summary.byType.outbound
-                                            .count
-                                    }
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Outbound
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-red-600'>
+                            {movementSummary.summary.byType.outbound.count}
+                        </div>
+                        <div className='text-xs text-slate-500 mt-2'>
+                            -{movementSummary.summary.byType.outbound.quantity}{' '}
+                            units
                         </div>
                     </div>
                     <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                        <div className='flex items-center justify-between'>
-                            <div>
-                                <div className='text-sm font-semibold text-slate-600'>
-                                    Avg. Per Day
-                                </div>
-                                <div className='text-3xl font-bold text-blue-600 mt-2'>
-                                    {movementSummary.summary.averageMovementsPerDay.toFixed(
-                                        1
-                                    )}
-                                </div>
-                            </div>
+                        <div className='text-sm font-semibold text-slate-600'>
+                            Transfers
+                        </div>
+                        <div className='text-3xl font-bold mt-2 text-blue-600'>
+                            {movementSummary.summary.byType.transfer.count}
+                        </div>
+                        <div className='text-xs text-slate-500 mt-2'>
+                            {movementSummary.summary.byType.adjustment.count}{' '}
+                            adjustments
                         </div>
                     </div>
                 </div>
             )}
 
             {/* Report Type Tabs */}
-            <div className='bg-white rounded-2xl shadow-lg border border-slate-200'>
-                <div className='border-b-2 border-slate-200'>
-                    <div className='flex'>
-                        <button
-                            onClick={() => setActiveReport('stock')}
-                            className={`px-8 py-4 font-bold text-lg transition-all ${
-                                activeReport === 'stock'
-                                    ? 'border-b-4 border-primary-600 text-primary-600 bg-primary-50'
-                                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-                            }`}
-                        >
-                            📊 Stock Levels Report
-                        </button>
-                        <button
-                            onClick={() => setActiveReport('movements')}
-                            className={`px-8 py-4 font-bold text-lg transition-all ${
-                                activeReport === 'movements'
-                                    ? 'border-b-4 border-primary-600 text-primary-600 bg-primary-50'
-                                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-                            }`}
-                        >
-                            📈 Movement Summary
-                        </button>
-                    </div>
+            <div className='bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden'>
+                <div className='flex border-b border-slate-200 bg-slate-50'>
+                    <button
+                        onClick={() => setActiveReport('stock')}
+                        className={`flex-1 px-6 py-4 font-semibold text-base transition-all ${
+                            activeReport === 'stock'
+                                ? 'bg-white text-primary-600 border-b-2 border-primary-600'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                    >
+                        📊 Stock Levels Report
+                    </button>
+                    <button
+                        onClick={() => setActiveReport('movements')}
+                        className={`flex-1 px-6 py-4 font-semibold text-base transition-all ${
+                            activeReport === 'movements'
+                                ? 'bg-white text-primary-600 border-b-2 border-primary-600'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                    >
+                        📈 Movement Summary
+                    </button>
                 </div>
 
                 {/* Filters */}
-                <div className='p-6 bg-slate-50'>
-                    <div className='grid grid-cols-1 md:grid-cols-4 gap-4 animate-slideUp'>
+                <div className='p-6 bg-white'>
+                    <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                         {activeReport === 'stock' ? (
                             <>
                                 <div>
@@ -460,53 +445,6 @@ export default function ReportsPage() {
                 <>
                     {activeReport === 'stock' && stockSummary && (
                         <>
-                            {/* Stock Summary Cards */}
-                            <div className='grid grid-cols-1 md:grid-cols-5 gap-6 mb-6 animate-slideUp'>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                                    <div className='text-sm font-semibold text-slate-600'>
-                                        Total Items
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-slate-900'>
-                                        {stockSummary.totalItems}
-                                    </div>
-                                </div>
-                                <div className='bg-gradient-to-br from-primary-600 to-primary-700 p-6 rounded-2xl shadow-lg text-white hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                                    <div className='text-sm font-semibold text-primary-100'>
-                                        Total Value
-                                    </div>
-                                    <div className='text-2xl font-bold mt-2'>
-                                        Rp
-                                        {stockSummary.totalStockValue.toFixed(
-                                            2
-                                        )}
-                                    </div>
-                                </div>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                                    <div className='text-sm font-semibold text-slate-600'>
-                                        In Stock
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-green-600'>
-                                        {stockSummary.itemsInStock}
-                                    </div>
-                                </div>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                                    <div className='text-sm font-semibold text-slate-600'>
-                                        Low Stock
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-orange-600'>
-                                        {stockSummary.itemsLowStock}
-                                    </div>
-                                </div>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
-                                    <div className='text-sm font-semibold text-slate-600'>
-                                        Out of Stock
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-red-600'>
-                                        {stockSummary.itemsOutOfStock}
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Stock Table */}
                             <div className='bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200'>
                                 <table className='w-full'>
@@ -609,81 +547,6 @@ export default function ReportsPage() {
 
                     {activeReport === 'movements' && movementSummary && (
                         <>
-                            {/* Movement Summary Cards */}
-                            <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 animate-slideUp'>
-                                <div className='bg-white p-6 rounded-lg shadow'>
-                                    <div className='text-sm text-gray-600'>
-                                        Total Movements
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2'>
-                                        {movementSummary.summary.totalMovements}
-                                    </div>
-                                    <div className='text-xs text-gray-500 mt-1'>
-                                        Avg:{' '}
-                                        {movementSummary.summary.averageMovementsPerDay.toFixed(
-                                            1
-                                        )}
-                                        /day
-                                    </div>
-                                </div>
-                                <div className='bg-white p-6 rounded-lg shadow'>
-                                    <div className='text-sm text-gray-600'>
-                                        Inbound
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-green-600'>
-                                        {
-                                            movementSummary.summary.byType
-                                                .inbound.count
-                                        }
-                                    </div>
-                                    <div className='text-xs text-gray-500 mt-1'>
-                                        +
-                                        {
-                                            movementSummary.summary.byType
-                                                .inbound.quantity
-                                        }{' '}
-                                        units
-                                    </div>
-                                </div>
-                                <div className='bg-white p-6 rounded-lg shadow'>
-                                    <div className='text-sm text-gray-600'>
-                                        Outbound
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-red-600'>
-                                        {
-                                            movementSummary.summary.byType
-                                                .outbound.count
-                                        }
-                                    </div>
-                                    <div className='text-xs text-gray-500 mt-1'>
-                                        -
-                                        {
-                                            movementSummary.summary.byType
-                                                .outbound.quantity
-                                        }{' '}
-                                        units
-                                    </div>
-                                </div>
-                                <div className='bg-white p-6 rounded-lg shadow'>
-                                    <div className='text-sm text-gray-600'>
-                                        Transfers
-                                    </div>
-                                    <div className='text-3xl font-bold mt-2 text-blue-600'>
-                                        {
-                                            movementSummary.summary.byType
-                                                .transfer.count
-                                        }
-                                    </div>
-                                    <div className='text-xs text-gray-500 mt-1'>
-                                        {
-                                            movementSummary.summary.byType
-                                                .adjustment.count
-                                        }{' '}
-                                        adjustments
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Movement by Category */}
                             <div className='bg-white rounded-lg shadow p-6 mb-6'>
                                 <h3 className='text-xl font-semibold mb-4'>

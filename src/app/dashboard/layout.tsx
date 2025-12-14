@@ -12,6 +12,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
     const [userName, setUserName] = useState('User');
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
         const user = localStorage.getItem('user');
@@ -232,105 +233,207 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
         <div className='min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200'>
             {/* Sidebar */}
-            <aside className='fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 shadow-xl'>
-                {/* Logo Section */}
-                <div className='p-6 border-b border-slate-200 bg-gradient-to-br from-primary-600 to-primary-700'>
-                    <div className='flex items-center gap-3'>
-                        <div className='w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg'>
-                            <svg
-                                className='w-7 h-7 text-primary-600'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-                                />
-                            </svg>
+            <aside
+                className={`fixed left-0 top-0 h-screen bg-white border-r border-slate-200 shadow-xl transition-all duration-300 ease-in-out z-40 flex flex-col ${
+                    sidebarOpen ? 'w-64' : 'w-16'
+                }`}
+            >
+                {/* Logo Section - Fixed at top */}
+                <div className='flex-shrink-0 p-4 border-b border-slate-200 bg-gradient-to-br from-primary-600 to-primary-700'>
+                    {sidebarOpen ? (
+                        <div className='flex items-center gap-3'>
+                            <div className='w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg'>
+                                <svg
+                                    className='w-7 h-7 text-primary-600'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 className='text-xl font-bold text-white'>
+                                    WMS
+                                </h1>
+                                <p className='text-primary-100 text-xs'>
+                                    Enterprise Edition
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className='text-xl font-bold text-white'>
-                                WMS
-                            </h1>
-                            <p className='text-primary-100 text-xs'>
-                                Enterprise Edition
-                            </p>
+                    ) : (
+                        <div className='flex items-center justify-center'>
+                            <div className='w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg'>
+                                <svg
+                                    className='w-6 h-6 text-primary-600'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+                                    />
+                                </svg>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Navigation */}
-                <nav className='p-4 space-y-1'>
+                {/* Navigation - Scrollable */}
+                <nav className='flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1'>
                     {menuItems.map((item) => (
                         <Link
                             key={item.path}
                             href={item.path}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                            title={!sidebarOpen ? item.label : ''}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                                 isActive(item.path)
                                     ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/30'
                                     : 'text-slate-700 hover:bg-slate-100 hover:text-primary-600'
-                            }`}
+                            } ${!sidebarOpen ? 'justify-center' : ''}`}
                         >
-                            {item.icon}
-                            <span className='font-medium'>{item.label}</span>
+                            <span className='flex-shrink-0'>{item.icon}</span>
+                            {sidebarOpen && (
+                                <span className='font-medium whitespace-nowrap'>
+                                    {item.label}
+                                </span>
+                            )}
                         </Link>
                     ))}
                 </nav>
 
-                {/* User Info & Logout */}
-                <div className='absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 bg-slate-50'>
-                    <div className='mb-3 px-4 py-3 bg-white rounded-xl border border-slate-200'>
-                        <div className='flex items-center gap-3'>
-                            <div className='w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center text-white font-bold'>
-                                {userName.charAt(0).toUpperCase()}
+                {/* User Info & Logout - Fixed at bottom */}
+                <div className='flex-shrink-0 p-3 border-t border-slate-200 bg-slate-50'>
+                    {sidebarOpen ? (
+                        <>
+                            <div className='mb-3 px-4 py-3 bg-white rounded-xl border border-slate-200'>
+                                <div className='flex items-center gap-3'>
+                                    <div className='w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center text-white font-bold'>
+                                        {userName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className='flex-1 min-w-0'>
+                                        <p className='text-sm font-semibold text-slate-900 truncate'>
+                                            {userName}
+                                        </p>
+                                        <p className='text-xs text-slate-500'>
+                                            Administrator
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className='flex-1 min-w-0'>
-                                <p className='text-sm font-semibold text-slate-900 truncate'>
-                                    {userName}
-                                </p>
-                                <p className='text-xs text-slate-500'>
-                                    Administrator
-                                </p>
+                            <button
+                                onClick={handleLogout}
+                                className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl font-medium'
+                            >
+                                <svg
+                                    className='w-5 h-5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                                    />
+                                </svg>
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <div className='mb-2 flex justify-center'>
+                                <div
+                                    className='w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center text-white font-bold'
+                                    title={userName}
+                                >
+                                    {userName.charAt(0).toUpperCase()}
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleLogout}
-                        className='w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl font-medium'
-                    >
-                        <svg
-                            className='w-5 h-5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
-                            />
-                        </svg>
-                        Logout
-                    </button>
+                            <button
+                                onClick={handleLogout}
+                                title='Logout'
+                                className='w-full flex items-center justify-center p-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl'
+                            >
+                                <svg
+                                    className='w-5 h-5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                                    />
+                                </svg>
+                            </button>
+                        </>
+                    )}
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className='ml-64'>
+            <main
+                className={`transition-all duration-300 ease-in-out ${
+                    sidebarOpen ? 'ml-64' : 'ml-16'
+                }`}
+            >
                 {/* Top Bar */}
                 <header className='bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30'>
                     <div className='px-6 py-4 flex justify-between items-center'>
-                        <div>
-                            <h2 className='text-xl font-bold text-slate-900'>
-                                Warehouse Management System
-                            </h2>
-                            <p className='text-sm text-slate-600 mt-0.5'>
-                                Internal Use Only • Enterprise Edition
-                            </p>
+                        <div className='flex items-center gap-4'>
+                            {/* Toggle Sidebar Button */}
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                className='p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-700 hover:text-primary-600'
+                                title={
+                                    sidebarOpen
+                                        ? 'Hide Sidebar'
+                                        : 'Show Sidebar'
+                                }
+                            >
+                                <svg
+                                    className='w-6 h-6'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    {sidebarOpen ? (
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M11 19l-7-7 7-7m8 14l-7-7 7-7'
+                                        />
+                                    ) : (
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M13 5l7 7-7 7M5 5l7 7-7 7'
+                                        />
+                                    )}
+                                </svg>
+                            </button>
+                            <div>
+                                <h2 className='text-xl font-bold text-slate-900'>
+                                    Warehouse Management System
+                                </h2>
+                                <p className='text-sm text-slate-600 mt-0.5'>
+                                    Internal Use Only • Enterprise Edition
+                                </p>
+                            </div>
                         </div>
                         <div className='flex items-center gap-4'>
                             <div className='text-right'>
