@@ -35,11 +35,24 @@ export async function GET(request: NextRequest) {
                 children: {
                     where: { active: true },
                     include: {
-                        children: true,
+                        children: {
+                            include: {
+                                children: true,
+                                items: {
+                                    select: {
+                                        id: true,
+                                    },
+                                },
+                            },
+                        },
+                        items: {
+                            select: {
+                                id: true,
+                            },
+                        },
                     },
                 },
                 items: {
-                    where: { active: true },
                     select: {
                         id: true,
                         name: true,
@@ -50,11 +63,20 @@ export async function GET(request: NextRequest) {
             orderBy: [{ code: 'asc' }],
         });
 
-        // Calculate item count for each category
-        const categoriesWithCount = categories.map((cat) => ({
-            ...cat,
-            itemCount: cat.items.length,
-        }));
+        // Recursive function to add itemCount to all levels
+        const addItemCount = (cat: any): any => {
+            const itemCount = cat.items?.length || 0;
+            const children =
+                cat.children?.map((child: any) => addItemCount(child)) || [];
+            return {
+                ...cat,
+                itemCount,
+                children,
+            };
+        };
+
+        // Calculate item count for each category recursively
+        const categoriesWithCount = categories.map((cat) => addItemCount(cat));
 
         return successResponse(categoriesWithCount);
     } catch (error) {

@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import {
-    Package,
-    Clock,
-    CheckCircle,
-    XCircle,
-    AlertTriangle,
-    RefreshCw,
-    Filter,
-    X,
-    Search,
-} from 'lucide-react';
+    BoxIcon,
+    ClockIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    AlertIcon,
+    RefreshIcon,
+    FilterIcon,
+    XIcon,
+    SearchIcon,
+    PlusIcon,
+} from '@/components/icons';
 import TableSkeleton from '@/components/TableSkeleton';
 
 interface Reservation {
@@ -289,13 +290,13 @@ export default function ReservationsPage() {
 
     const getTypeIcon = (type: string) => {
         const icons: Record<string, React.ReactElement> = {
-            ORDER: <Package className='w-4 h-4' />,
-            TRANSFER: <RefreshCw className='w-4 h-4' />,
-            PRODUCTION: <AlertTriangle className='w-4 h-4' />,
-            MANUAL: <Clock className='w-4 h-4' />,
+            ORDER: <BoxIcon className='w-4 h-4' />,
+            TRANSFER: <RefreshIcon className='w-4 h-4' />,
+            PRODUCTION: <AlertIcon className='w-4 h-4' />,
+            MANUAL: <ClockIcon className='w-4 h-4' />,
         };
 
-        return icons[type] || <Package className='w-4 h-4' />;
+        return icons[type] || <BoxIcon className='w-4 h-4' />;
     };
 
     const isExpiringSoon = (expiresAt?: string) => {
@@ -323,7 +324,7 @@ export default function ReservationsPage() {
                 <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
                         <div className='bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20'>
-                            <Package className='w-10 h-10' />
+                            <BoxIcon className='w-10 h-10' />
                         </div>
                         <div>
                             <h1 className='text-4xl font-bold mb-2'>
@@ -339,19 +340,7 @@ export default function ReservationsPage() {
                         onClick={() => setShowCreateModal(true)}
                         className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition-colors font-semibold shadow-lg'
                     >
-                        <svg
-                            className='w-5 h-5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M12 4v16m8-8H4'
-                            />
-                        </svg>
+                        <PlusIcon className='w-5 h-5' />
                         Create Reservation
                     </button>
                 </div>
@@ -370,7 +359,7 @@ export default function ReservationsPage() {
                             </p>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <Package className='w-7 h-7 text-white' />
+                            <BoxIcon className='w-7 h-7 text-white' />
                         </div>
                     </div>
                 </div>
@@ -386,7 +375,7 @@ export default function ReservationsPage() {
                             </p>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <CheckCircle className='w-7 h-7 text-white' />
+                            <CheckCircleIcon className='w-7 h-7 text-white' />
                         </div>
                     </div>
                 </div>
@@ -402,7 +391,7 @@ export default function ReservationsPage() {
                             </p>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg'>
-                            <CheckCircle className='w-7 h-7 text-white' />
+                            <CheckCircleIcon className='w-7 h-7 text-white' />
                         </div>
                     </div>
                 </div>
@@ -418,7 +407,7 @@ export default function ReservationsPage() {
                             </p>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center shadow-lg'>
-                            <XCircle className='w-7 h-7 text-white' />
+                            <XCircleIcon className='w-7 h-7 text-white' />
                         </div>
                     </div>
                 </div>
@@ -434,7 +423,7 @@ export default function ReservationsPage() {
                             </p>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <Clock className='w-7 h-7 text-white' />
+                            <ClockIcon className='w-7 h-7 text-white' />
                         </div>
                     </div>
                 </div>
@@ -458,7 +447,7 @@ export default function ReservationsPage() {
             <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 animate-slideUp'>
                 <div className='flex items-center gap-3 mb-6'>
                     <div className='w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center'>
-                        <Filter className='w-5 h-5 text-white' />
+                        <FilterIcon className='w-5 h-5 text-white' />
                     </div>
                     <h2 className='text-xl font-bold text-slate-900'>
                         Filters & Actions
@@ -468,7 +457,7 @@ export default function ReservationsPage() {
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
                     <div>
                         <label className='block text-sm font-semibold text-slate-700 mb-2'>
-                            <CheckCircle className='w-4 h-4 inline mr-1' />
+                            <CheckCircleIcon className='w-4 h-4 inline mr-1' />
                             Status
                         </label>
                         <select
@@ -486,7 +475,7 @@ export default function ReservationsPage() {
 
                     <div>
                         <label className='block text-sm font-semibold text-slate-700 mb-2'>
-                            <Package className='w-4 h-4 inline mr-1' />
+                            <BoxIcon className='w-4 h-4 inline mr-1' />
                             Type
                         </label>
                         <select
@@ -504,7 +493,7 @@ export default function ReservationsPage() {
 
                     <div>
                         <label className='block text-sm font-semibold text-slate-700 mb-2'>
-                            <Search className='w-4 h-4 inline mr-1' />
+                            <SearchIcon className='w-4 h-4 inline mr-1' />
                             Search
                         </label>
                         <input
@@ -521,14 +510,14 @@ export default function ReservationsPage() {
                             onClick={clearFilters}
                             className='flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all font-medium shadow-sm hover:shadow'
                         >
-                            <X className='w-4 h-4 inline mr-1' />
+                            <XIcon className='w-4 h-4 inline mr-1' />
                             Clear
                         </button>
                         <button
                             onClick={fetchReservations}
                             className='flex-1 px-4 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all font-medium shadow-lg hover:shadow-xl'
                         >
-                            <RefreshCw className='w-4 h-4 inline mr-1' />
+                            <RefreshIcon className='w-4 h-4 inline mr-1' />
                             Refresh
                         </button>
                     </div>
@@ -549,7 +538,7 @@ export default function ReservationsPage() {
                         disabled={processing}
                         className='px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 disabled:from-slate-300 disabled:to-slate-400 transition-all font-medium shadow-lg hover:shadow-xl'
                     >
-                        <Clock className='w-4 h-4 inline mr-1' />
+                        <ClockIcon className='w-4 h-4 inline mr-1' />
                         Expire Old Reservations
                     </button>
                 </div>
@@ -766,7 +755,7 @@ export default function ReservationsPage() {
 
                     {filteredReservations.length === 0 && (
                         <div className='text-center py-12'>
-                            <Package className='w-16 h-16 text-gray-300 mx-auto mb-4' />
+                            <BoxIcon className='w-16 h-16 text-gray-300 mx-auto mb-4' />
                             <p className='text-gray-500 text-lg'>
                                 No reservations found
                             </p>
@@ -780,7 +769,17 @@ export default function ReservationsPage() {
 
             {/* Create Reservation Modal */}
             {showCreateModal && (
-                <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50'>
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
                     <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto'>
                         <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 flex justify-between items-center'>
                             <h2 className='text-xl font-bold text-white'>
@@ -790,7 +789,7 @@ export default function ReservationsPage() {
                                 onClick={() => setShowCreateModal(false)}
                                 className='text-white hover:bg-white/20 rounded-lg p-2 transition'
                             >
-                                <X className='w-5 h-5' />
+                                <XIcon className='w-5 h-5' />
                             </button>
                         </div>
                         <div className='p-6'>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Pagination from '@/components/Pagination';
+import { ChartIcon } from '@/components/icons';
 
 interface StockReport {
     id: string;
@@ -179,19 +180,7 @@ export default function ReportsPage() {
             <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white'>
                 <div className='flex items-center gap-4'>
                     <div className='w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20'>
-                        <svg
-                            className='w-8 h-8'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                            />
-                        </svg>
+                        <ChartIcon className='w-8 h-8' />
                     </div>
                     <div>
                         <h1 className='text-4xl font-bold mb-2'>
@@ -233,7 +222,7 @@ export default function ReportsPage() {
 
                 {/* Filters */}
                 <div className='p-6 bg-slate-50'>
-                    <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                    <div className='grid grid-cols-1 md:grid-cols-4 gap-4 animate-slideUp'>
                         {activeReport === 'stock' ? (
                             <>
                                 <div>
@@ -355,8 +344,8 @@ export default function ReportsPage() {
                     {activeReport === 'stock' && stockSummary && (
                         <>
                             {/* Stock Summary Cards */}
-                            <div className='grid grid-cols-1 md:grid-cols-5 gap-6 mb-6'>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                            <div className='grid grid-cols-1 md:grid-cols-5 gap-6 mb-6 animate-slideUp'>
+                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                                     <div className='text-sm font-semibold text-slate-600'>
                                         Total Items
                                     </div>
@@ -364,7 +353,7 @@ export default function ReportsPage() {
                                         {stockSummary.totalItems}
                                     </div>
                                 </div>
-                                <div className='bg-gradient-to-br from-primary-600 to-primary-700 p-6 rounded-2xl shadow-lg text-white hover:shadow-xl transition-shadow'>
+                                <div className='bg-gradient-to-br from-primary-600 to-primary-700 p-6 rounded-2xl shadow-lg text-white hover:shadow-xl transition-all duration-300 hover:scale-105'>
                                     <div className='text-sm font-semibold text-primary-100'>
                                         Total Value
                                     </div>
@@ -375,7 +364,7 @@ export default function ReportsPage() {
                                         )}
                                     </div>
                                 </div>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                                     <div className='text-sm font-semibold text-slate-600'>
                                         In Stock
                                     </div>
@@ -383,7 +372,7 @@ export default function ReportsPage() {
                                         {stockSummary.itemsInStock}
                                     </div>
                                 </div>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                                     <div className='text-sm font-semibold text-slate-600'>
                                         Low Stock
                                     </div>
@@ -391,7 +380,7 @@ export default function ReportsPage() {
                                         {stockSummary.itemsLowStock}
                                     </div>
                                 </div>
-                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                                     <div className='text-sm font-semibold text-slate-600'>
                                         Out of Stock
                                     </div>
@@ -504,7 +493,7 @@ export default function ReportsPage() {
                     {activeReport === 'movements' && movementSummary && (
                         <>
                             {/* Movement Summary Cards */}
-                            <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
+                            <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 animate-slideUp'>
                                 <div className='bg-white p-6 rounded-lg shadow'>
                                     <div className='text-sm text-gray-600'>
                                         Total Movements

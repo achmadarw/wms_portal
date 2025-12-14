@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import {
-    Package,
-    Plus,
-    Edit,
-    Trash2,
-    X,
-    Check,
-    ChevronRight,
-    FolderTree,
-} from 'lucide-react';
+    TagIcon,
+    PlusIcon,
+    EditIcon,
+    TrashIcon,
+    XIcon,
+    CheckIcon,
+    ChevronRightIcon,
+    FolderIcon,
+    ChevronLeftDoubleIcon,
+    ChevronLeftIcon,
+    ChevronRightDoubleIcon,
+    ChevronDownIcon,
+} from '@/components/icons';
 import { User } from '@prisma/client';
 import TableSkeleton from '@/components/TableSkeleton';
 
@@ -52,6 +56,11 @@ export default function CategoriesPage() {
     // RBAC: userRole from localStorage
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [userRole, setUserRole] = useState<string>('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+        new Set()
+    );
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -232,6 +241,29 @@ export default function CategoriesPage() {
         }
     };
 
+    const toggleCategory = (categoryId: string) => {
+        setExpandedCategories((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(categoryId)) {
+                newSet.delete(categoryId);
+            } else {
+                newSet.add(categoryId);
+            }
+            return newSet;
+        });
+    };
+
+    // Calculate total items including all subcategories recursively
+    const getTotalItemCount = (category: Category): number => {
+        let total = category.itemCount || 0;
+        if (category.children && category.children.length > 0) {
+            category.children.forEach((child) => {
+                total += getTotalItemCount(child);
+            });
+        }
+        return total;
+    };
+
     const renderCategoryTree = (cats: Category[], level: number = 0) => {
         const topLevelCats = cats.filter((cat) =>
             level === 0 ? !cat.parentId : cat.parentId === cats[0]?.parentId
@@ -244,12 +276,30 @@ export default function CategoriesPage() {
                     style={{ marginLeft: `${level * 2}rem` }}
                 >
                     <div className='flex items-center gap-4 flex-1'>
-                        {level > 0 && (
-                            <ChevronRight className='w-5 h-5 text-slate-400' />
+                        {category.children && category.children.length > 0 ? (
+                            <button
+                                onClick={() => toggleCategory(category.id)}
+                                className='p-1 hover:bg-slate-100 rounded transition-colors'
+                                title={
+                                    expandedCategories.has(category.id)
+                                        ? 'Collapse'
+                                        : 'Expand'
+                                }
+                            >
+                                <ChevronDownIcon
+                                    className={`w-5 h-5 text-slate-600 transition-transform ${
+                                        expandedCategories.has(category.id)
+                                            ? 'rotate-0'
+                                            : '-rotate-90'
+                                    }`}
+                                />
+                            </button>
+                        ) : (
+                            <div className='w-7' />
                         )}
                         <div className='flex items-center gap-3'>
                             <div className='p-2 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg'>
-                                <FolderTree className='w-5 h-5 text-purple-700' />
+                                <FolderIcon className='w-5 h-5 text-purple-700' />
                             </div>
                             <div>
                                 <div className='flex items-center gap-2'>
@@ -276,9 +326,15 @@ export default function CategoriesPage() {
                     <div className='flex items-center gap-4'>
                         <div className='text-sm text-slate-600'>
                             <span className='font-medium'>
-                                {category.itemCount}
+                                {getTotalItemCount(category)}
                             </span>{' '}
                             items
+                            {category.children &&
+                                category.children.length > 0 && (
+                                    <span className='text-xs text-slate-500 ml-1'>
+                                        ({category.itemCount || 0} direct)
+                                    </span>
+                                )}
                         </div>
                         <div className='flex gap-2'>
                             {(userRole === 'ADMIN' ||
@@ -290,7 +346,7 @@ export default function CategoriesPage() {
                                     className='p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors'
                                     title='Edit Category'
                                 >
-                                    <Edit className='w-4 h-4' />
+                                    <EditIcon className='w-4 h-4' />
                                 </button>
                             )}
                             {userRole === 'ADMIN' && (
@@ -299,17 +355,19 @@ export default function CategoriesPage() {
                                     className='p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors'
                                     title='Delete Category'
                                 >
-                                    <Trash2 className='w-4 h-4' />
+                                    <TrashIcon className='w-4 h-4' />
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
-                {category.children && category.children.length > 0 && (
-                    <div className='mt-2'>
-                        {renderCategoryTree(category.children, level + 1)}
-                    </div>
-                )}
+                {category.children &&
+                    category.children.length > 0 &&
+                    expandedCategories.has(category.id) && (
+                        <div className='mt-2'>
+                            {renderCategoryTree(category.children, level + 1)}
+                        </div>
+                    )}
             </div>
         ));
     };
@@ -323,14 +381,20 @@ export default function CategoriesPage() {
     );
     const totalItems = categories.reduce((sum, cat) => sum + cat.itemCount, 0);
 
+    // Pagination calculations
+    const totalPages = Math.ceil(topLevelCategories.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedCategories = topLevelCategories.slice(startIndex, endIndex);
+
     return (
         <div className='space-y-6'>
             {/* Header */}
-            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8'>
+            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 animate-fadeIn'>
                 <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-white/20 backdrop-blur-sm rounded-xl'>
-                            <Package className='w-8 h-8 text-white' />
+                            <TagIcon className='w-8 h-8 text-white' />
                         </div>
                         <div>
                             <h1 className='text-3xl font-bold text-white'>
@@ -347,7 +411,7 @@ export default function CategoriesPage() {
                             onClick={handleOpenModal}
                             className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all'
                         >
-                            <Plus className='w-5 h-5' />
+                            <PlusIcon className='w-5 h-5' />
                             Add Category
                         </button>
                     )}
@@ -355,11 +419,11 @@ export default function CategoriesPage() {
             </div>
 
             {/* Stats */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 animate-slideUp'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl'>
-                            <FolderTree className='w-6 h-6 text-blue-700' />
+                            <FolderIcon className='w-6 h-6 text-blue-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -372,10 +436,10 @@ export default function CategoriesPage() {
                     </div>
                 </div>
 
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-green-100 to-green-200 rounded-xl'>
-                            <Package className='w-6 h-6 text-green-700' />
+                            <TagIcon className='w-6 h-6 text-green-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -388,10 +452,10 @@ export default function CategoriesPage() {
                     </div>
                 </div>
 
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl'>
-                            <Package className='w-6 h-6 text-purple-700' />
+                            <TagIcon className='w-6 h-6 text-purple-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -420,7 +484,7 @@ export default function CategoriesPage() {
             <div className='bg-white rounded-2xl shadow-lg border border-slate-200 p-6'>
                 {filteredCategories.length === 0 ? (
                     <div className='text-center py-12'>
-                        <FolderTree className='w-16 h-16 text-slate-300 mx-auto mb-4' />
+                        <FolderIcon className='w-16 h-16 text-slate-300 mx-auto mb-4' />
                         <p className='text-slate-600 text-lg'>
                             No categories found
                         </p>
@@ -430,21 +494,172 @@ export default function CategoriesPage() {
                     </div>
                 ) : (
                     <div className='space-y-2'>
-                        {renderCategoryTree(topLevelCategories)}
+                        {renderCategoryTree(paginatedCategories)}
+                    </div>
+                )}
+
+                {/* Pagination Controls */}
+                {topLevelCategories.length > 0 && (
+                    <div className='p-6 border-t border-slate-200 bg-slate-50'>
+                        <div className='flex items-center justify-between'>
+                            {/* Items Per Page Selector */}
+                            <div className='flex items-center gap-3'>
+                                <div className='flex items-center gap-2'>
+                                    <label className='text-sm text-slate-600 font-medium'>
+                                        Categories per page:
+                                    </label>
+                                    <select
+                                        value={itemsPerPage}
+                                        onChange={(e) => {
+                                            setItemsPerPage(
+                                                Number(e.target.value)
+                                            );
+                                            setCurrentPage(1);
+                                        }}
+                                        className='px-3 py-1.5 border border-slate-300 rounded-lg bg-white text-slate-700 font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
+                                    >
+                                        <option value={5}>5</option>
+                                        <option value={10}>10</option>
+                                        <option value={20}>20</option>
+                                        <option value={50}>50</option>
+                                        <option value={100}>100</option>
+                                    </select>
+                                </div>
+
+                                {/* Results Info */}
+                                <div className='text-sm text-slate-600'>
+                                    Showing{' '}
+                                    <span className='font-semibold text-slate-900'>
+                                        {startIndex + 1}
+                                    </span>{' '}
+                                    to{' '}
+                                    <span className='font-semibold text-slate-900'>
+                                        {Math.min(
+                                            endIndex,
+                                            topLevelCategories.length
+                                        )}
+                                    </span>{' '}
+                                    of{' '}
+                                    <span className='font-semibold text-slate-900'>
+                                        {topLevelCategories.length}
+                                    </span>{' '}
+                                    categories
+                                </div>
+                            </div>
+
+                            {/* Pagination Buttons */}
+                            <div className='flex items-center gap-2'>
+                                <button
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='First page'
+                                >
+                                    <ChevronLeftDoubleIcon className='w-5 h-5' />
+                                </button>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((prev) =>
+                                            Math.max(1, prev - 1)
+                                        )
+                                    }
+                                    disabled={currentPage === 1}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Previous page'
+                                >
+                                    <ChevronLeftIcon className='w-5 h-5' />
+                                </button>
+
+                                {/* Page Numbers */}
+                                <div className='flex items-center gap-1'>
+                                    {Array.from(
+                                        { length: totalPages },
+                                        (_, i) => i + 1
+                                    )
+                                        .filter((page) => {
+                                            return (
+                                                page === 1 ||
+                                                page === totalPages ||
+                                                Math.abs(page - currentPage) <=
+                                                    1
+                                            );
+                                        })
+                                        .map((page, index, array) => (
+                                            <div
+                                                key={page}
+                                                className='flex items-center'
+                                            >
+                                                {index > 0 &&
+                                                    array[index - 1] !==
+                                                        page - 1 && (
+                                                        <span className='px-2 text-slate-400'>
+                                                            ...
+                                                        </span>
+                                                    )}
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage(page)
+                                                    }
+                                                    className={`px-4 py-2 rounded-lg font-medium transition ${
+                                                        currentPage === page
+                                                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
+                                                            : 'border border-slate-300 hover:bg-slate-100 text-slate-700'
+                                                    }`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            </div>
+                                        ))}
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((prev) =>
+                                            Math.min(totalPages, prev + 1)
+                                        )
+                                    }
+                                    disabled={currentPage === totalPages}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Next page'
+                                >
+                                    <ChevronRightIcon className='w-5 h-5' />
+                                </button>
+
+                                <button
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Last page'
+                                >
+                                    <ChevronRightDoubleIcon className='w-5 h-5' />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
 
             {/* Create Modal */}
             {showModal && (
-                <div className='fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 p-4'>
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
                     <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden'>
                         {/* Modal Header */}
                         <div className='bg-gradient-to-r from-primary-600 to-primary-700 p-6'>
                             <div className='flex items-center justify-between'>
                                 <div className='flex items-center gap-3'>
                                     <div className='p-2 bg-white/20 backdrop-blur-sm rounded-lg'>
-                                        <Package className='w-6 h-6 text-white' />
+                                        <TagIcon className='w-6 h-6 text-white' />
                                     </div>
                                     <div>
                                         <h2 className='text-2xl font-bold text-white'>
@@ -460,7 +675,7 @@ export default function CategoriesPage() {
                                     onClick={() => setShowModal(false)}
                                     className='p-2 hover:bg-white/10 rounded-lg transition-colors border border-white/20'
                                 >
-                                    <X className='w-6 h-6 text-white' />
+                                    <XIcon className='w-6 h-6 text-white' />
                                 </button>
                             </div>
                         </div>
@@ -474,7 +689,7 @@ export default function CategoriesPage() {
                                     </div>
                                 )}
 
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-slideUp'>
                                     <div>
                                         <label className='block text-sm font-bold text-slate-700 mb-2'>
                                             Category Code *
@@ -570,7 +785,7 @@ export default function CategoriesPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <Check className='w-5 h-5' />
+                                                <CheckIcon className='w-5 h-5' />
                                                 Create Category
                                             </>
                                         )}
@@ -591,14 +806,24 @@ export default function CategoriesPage() {
 
             {/* Edit Modal */}
             {showEditModal && editingCategory && (
-                <div className='fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 p-4'>
+                <div
+                    className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
+                    style={{
+                        position: 'fixed',
+                        width: '100vw',
+                        height: '100vh',
+                        margin: 0,
+                        padding: '1rem',
+                        zIndex: 100000,
+                    }}
+                >
                     <div className='bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden'>
                         {/* Modal Header */}
                         <div className='bg-gradient-to-r from-primary-600 to-primary-700 p-6'>
                             <div className='flex items-center justify-between'>
                                 <div className='flex items-center gap-3'>
                                     <div className='p-2 bg-white/20 backdrop-blur-sm rounded-lg'>
-                                        <Edit className='w-6 h-6 text-white' />
+                                        <EditIcon className='w-6 h-6 text-white' />
                                     </div>
                                     <div>
                                         <h2 className='text-2xl font-bold text-white'>
@@ -613,7 +838,7 @@ export default function CategoriesPage() {
                                     onClick={() => setShowEditModal(false)}
                                     className='p-2 hover:bg-white/10 rounded-lg transition-colors border border-white/20'
                                 >
-                                    <X className='w-6 h-6 text-white' />
+                                    <XIcon className='w-6 h-6 text-white' />
                                 </button>
                             </div>
                         </div>
@@ -627,7 +852,7 @@ export default function CategoriesPage() {
                                     </div>
                                 )}
 
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-slideUp'>
                                     <div>
                                         <label className='block text-sm font-bold text-slate-700 mb-2'>
                                             Category Code *
@@ -729,7 +954,7 @@ export default function CategoriesPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <Check className='w-5 h-5' />
+                                                <CheckIcon className='w-5 h-5' />
                                                 Update Category
                                             </>
                                         )}

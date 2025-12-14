@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    Package,
-    TrendingUp,
-    TrendingDown,
-    AlertTriangle,
-    Search,
-    Filter,
-    Download,
-} from 'lucide-react';
+    BoxIcon,
+    TrendingUpIcon,
+    TrendingDownIcon,
+    AlertIcon,
+    SearchIcon,
+    FilterIcon,
+    DownloadIcon,
+    DollarIcon,
+} from '@/components/icons';
 import Pagination from '@/components/Pagination';
 import { withProgress } from '@/lib/progress';
 
@@ -194,19 +195,19 @@ export default function InventoryPage() {
             return {
                 label: 'Out of Stock',
                 color: 'text-red-700 bg-red-100',
-                icon: AlertTriangle,
+                icon: AlertIcon,
             };
         } else if (available <= minStock) {
             return {
                 label: 'Low Stock',
                 color: 'text-yellow-700 bg-yellow-100',
-                icon: TrendingDown,
+                icon: TrendingDownIcon,
             };
         } else {
             return {
                 label: 'In Stock',
                 color: 'text-green-700 bg-green-100',
-                icon: Package,
+                icon: BoxIcon,
             };
         }
     };
@@ -246,7 +247,7 @@ export default function InventoryPage() {
                 <div className='flex items-center justify-between'>
                     <div>
                         <div className='flex items-center gap-3 mb-2'>
-                            <Package className='w-8 h-8' />
+                            <BoxIcon className='w-8 h-8' />
                             <h1 className='text-3xl font-bold'>
                                 Inventory Dashboard
                             </h1>
@@ -259,12 +260,12 @@ export default function InventoryPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slideUp'>
                 {/* Total Items */}
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl'>
-                            <Package className='w-6 h-6 text-blue-700' />
+                            <BoxIcon className='w-6 h-6 text-blue-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -278,10 +279,10 @@ export default function InventoryPage() {
                 </div>
 
                 {/* Total Quantity */}
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-green-100 to-green-200 rounded-xl'>
-                            <TrendingUp className='w-6 h-6 text-green-700' />
+                            <TrendingUpIcon className='w-6 h-6 text-green-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -295,22 +296,10 @@ export default function InventoryPage() {
                 </div>
 
                 {/* Total Value */}
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl'>
-                            <svg
-                                className='w-6 h-6 text-purple-700'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                                />
-                            </svg>
+                            <DollarIcon className='w-6 h-6 text-purple-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -324,10 +313,10 @@ export default function InventoryPage() {
                 </div>
 
                 {/* Low Stock Alerts */}
-                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-red-100 to-red-200 rounded-xl'>
-                            <AlertTriangle className='w-6 h-6 text-red-700' />
+                            <AlertIcon className='w-6 h-6 text-red-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -346,7 +335,7 @@ export default function InventoryPage() {
                 <h2 className='text-lg font-semibold text-slate-800 mb-4'>
                     Stock Status Overview
                 </h2>
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4 animate-slideUp'>
                     <div className='p-4 bg-green-50 rounded-xl border border-green-200'>
                         <div className='flex items-center justify-between'>
                             <div>
@@ -357,7 +346,7 @@ export default function InventoryPage() {
                                     {summary.inStock}
                                 </p>
                             </div>
-                            <Package className='w-8 h-8 text-green-600' />
+                            <BoxIcon className='w-8 h-8 text-green-600' />
                         </div>
                     </div>
                     <div className='p-4 bg-yellow-50 rounded-xl border border-yellow-200'>
@@ -370,7 +359,7 @@ export default function InventoryPage() {
                                     {summary.lowStock}
                                 </p>
                             </div>
-                            <TrendingDown className='w-8 h-8 text-yellow-600' />
+                            <TrendingDownIcon className='w-8 h-8 text-yellow-600' />
                         </div>
                     </div>
                     <div className='p-4 bg-red-50 rounded-xl border border-red-200'>
@@ -383,7 +372,7 @@ export default function InventoryPage() {
                                     {summary.outOfStock}
                                 </p>
                             </div>
-                            <AlertTriangle className='w-8 h-8 text-red-600' />
+                            <AlertIcon className='w-8 h-8 text-red-600' />
                         </div>
                     </div>
                 </div>
@@ -392,19 +381,19 @@ export default function InventoryPage() {
             {/* Filters */}
             <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200'>
                 <div className='flex items-center gap-2 mb-4'>
-                    <Filter className='w-5 h-5 text-slate-600' />
+                    <FilterIcon className='w-5 h-5 text-slate-600' />
                     <h2 className='text-lg font-semibold text-slate-800'>
                         Filters
                     </h2>
                 </div>
-                <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-4 animate-slideUp'>
                     {/* Search */}
                     <div>
                         <label className='block text-sm font-medium text-slate-700 mb-2'>
                             Search
                         </label>
                         <div className='relative'>
-                            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400' />
+                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400' />
                             <input
                                 type='text'
                                 placeholder='SKU, Name, or Barcode'
@@ -505,7 +494,7 @@ export default function InventoryPage() {
                             Inventory Items ({items.length})
                         </h2>
                         <button className='flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-800 border-2 border-slate-200 rounded-xl hover:border-slate-300 transition-colors'>
-                            <Download className='w-4 h-4' />
+                            <DownloadIcon className='w-4 h-4' />
                             Export
                         </button>
                     </div>
@@ -520,7 +509,7 @@ export default function InventoryPage() {
                     </div>
                 ) : items.length === 0 ? (
                     <div className='text-center py-12'>
-                        <Package className='w-16 h-16 text-slate-300 mx-auto mb-4' />
+                        <BoxIcon className='w-16 h-16 text-slate-300 mx-auto mb-4' />
                         <p className='text-slate-600 text-lg'>
                             No inventory items found
                         </p>

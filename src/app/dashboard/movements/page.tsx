@@ -7,6 +7,35 @@ import { useAlert } from '@/hooks/useAlert';
 import Pagination from '@/components/Pagination';
 import { withProgress } from '@/lib/progress';
 import MovementSkeleton from '@/components/MovementSkeleton';
+import {
+    MovementIcon,
+    PlusIcon,
+    InboundIcon,
+    OutboundIcon,
+    TransferIcon,
+    AdjustmentIcon,
+    DamageIcon,
+    ReturnIcon,
+    FilterIcon,
+    SearchIcon,
+    EditIcon,
+    TrashIcon,
+    EyeIcon,
+    CheckIcon,
+    XIcon,
+    ClipboardIcon,
+    BoxEmptyIcon,
+    BoxIcon,
+    TagIcon,
+    WarehouseIcon,
+    ClockFilledIcon,
+    CheckCircleFilledIcon,
+    XCircleFilledIcon,
+    LocationPinIcon,
+    HashIcon,
+    DocumentIcon,
+    SpinnerIcon,
+} from '@/components/icons';
 
 interface Movement {
     id: string;
@@ -916,23 +945,11 @@ Reference: ${result.movement.referenceNo}`,
 
             <div className='space-y-6'>
                 {/* Header */}
-                <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white'>
+                <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white animate-fadeIn'>
                     <div className='flex justify-between items-center'>
                         <div>
                             <div className='flex items-center gap-3 mb-2'>
-                                <svg
-                                    className='w-8 h-8'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                                    />
-                                </svg>
+                                <MovementIcon className='w-8 h-8' />
                                 <h1 className='text-3xl font-bold'>
                                     Stock Movements
                                 </h1>
@@ -945,19 +962,7 @@ Reference: ${result.movement.referenceNo}`,
                             onClick={() => setShowCreateModal(true)}
                             className='flex items-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition font-semibold shadow-lg'
                         >
-                            <svg
-                                className='w-5 h-5'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M12 4v16m8-8H4'
-                                />
-                            </svg>
+                            <PlusIcon className='w-5 h-5' />
                             Create Movement
                         </button>
                     </div>
@@ -965,26 +970,14 @@ Reference: ${result.movement.referenceNo}`,
 
                 {/* Stats Cards */}
                 {stats && (
-                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-slideUp'>
                         {/* Total Movements - Spans 2 rows */}
                         <div className='bg-gradient-to-br from-primary-600 to-primary-700 p-6 rounded-2xl shadow-xl border-2 border-primary-500 hover:shadow-2xl transition-all lg:row-span-2'>
                             <div className='flex flex-col h-full justify-between'>
                                 <div>
                                     <div className='flex items-center gap-2 mb-3'>
                                         <div className='w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center'>
-                                            <svg
-                                                className='w-7 h-7 text-white'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
-                                                />
-                                            </svg>
+                                            <ClipboardIcon className='w-7 h-7 text-white' />
                                         </div>
                                         <div className='text-sm font-bold text-primary-100 uppercase tracking-wider'>
                                             Total Movements
@@ -1066,19 +1059,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </div>
                                 <div className='flex justify-end mt-3'>
                                     <div className='w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow'>
-                                        <svg
-                                            className='w-5 h-5 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                                            />
-                                        </svg>
+                                        <InboundIcon className='w-5 h-5 text-white' />
                                     </div>
                                 </div>
                             </div>
@@ -1104,19 +1085,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </div>
                                 <div className='flex justify-end mt-3'>
                                     <div className='w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center shadow'>
-                                        <svg
-                                            className='w-5 h-5 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M17 8V4m0 0l-4 4m4-4l4 4m-6 4v12m0 0l-4-4m4 4l4-4'
-                                            />
-                                        </svg>
+                                        <OutboundIcon className='w-5 h-5 text-white' />
                                     </div>
                                 </div>
                             </div>
@@ -1138,19 +1107,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </div>
                                 <div className='flex justify-end mt-3'>
                                     <div className='w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow'>
-                                        <svg
-                                            className='w-5 h-5 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                                            />
-                                        </svg>
+                                        <TransferIcon className='w-5 h-5 text-white' />
                                     </div>
                                 </div>
                             </div>
@@ -1172,19 +1129,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </div>
                                 <div className='flex justify-end mt-3'>
                                     <div className='w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-lg flex items-center justify-center shadow'>
-                                        <svg
-                                            className='w-5 h-5 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-                                            />
-                                        </svg>
+                                        <AdjustmentIcon className='w-5 h-5 text-white' />
                                     </div>
                                 </div>
                             </div>
@@ -1206,19 +1151,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </div>
                                 <div className='flex justify-end mt-3'>
                                     <div className='w-10 h-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center shadow'>
-                                        <svg
-                                            className='w-5 h-5 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-                                            />
-                                        </svg>
+                                        <DamageIcon className='w-5 h-5 text-white' />
                                     </div>
                                 </div>
                             </div>
@@ -1240,19 +1173,7 @@ Reference: ${result.movement.referenceNo}`,
                                 </div>
                                 <div className='flex justify-end mt-3'>
                                     <div className='w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center shadow'>
-                                        <svg
-                                            className='w-5 h-5 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6'
-                                            />
-                                        </svg>
+                                        <ReturnIcon className='w-5 h-5 text-white' />
                                     </div>
                                 </div>
                             </div>
@@ -1263,24 +1184,12 @@ Reference: ${result.movement.referenceNo}`,
                 {/* Filters */}
                 <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200'>
                     <div className='flex items-center gap-3 mb-4'>
-                        <svg
-                            className='w-5 h-5 text-primary-600'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z'
-                            />
-                        </svg>
+                        <FilterIcon className='w-5 h-5 text-primary-600' />
                         <span className='font-semibold text-slate-900'>
                             Filters:
                         </span>
                     </div>
-                    <div className='grid grid-cols-1 md:grid-cols-6 gap-4'>
+                    <div className='grid grid-cols-1 md:grid-cols-6 gap-4 animate-slideUp'>
                         <div>
                             <label className='block text-sm font-semibold text-slate-700 mb-2'>
                                 Movement Type
@@ -1434,19 +1343,7 @@ Reference: ${result.movement.referenceNo}`,
                                             className='px-6 py-16 text-center'
                                         >
                                             <div className='flex flex-col items-center justify-center'>
-                                                <svg
-                                                    className='w-16 h-16 text-slate-300 mb-4'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={1.5}
-                                                        d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4'
-                                                    />
-                                                </svg>
+                                                <BoxEmptyIcon className='w-16 h-16 text-slate-300 mb-4' />
                                                 <p className='text-slate-500 font-medium'>
                                                     No movements found
                                                 </p>
@@ -1664,21 +1561,7 @@ Reference: ${result.movement.referenceNo}`,
                                                                     className='inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow'
                                                                     title='Process Movement'
                                                                 >
-                                                                    <svg
-                                                                        className='w-3.5 h-3.5'
-                                                                        fill='none'
-                                                                        stroke='currentColor'
-                                                                        viewBox='0 0 24 24'
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap='round'
-                                                                            strokeLinejoin='round'
-                                                                            strokeWidth={
-                                                                                2
-                                                                            }
-                                                                            d='M5 13l4 4L19 7'
-                                                                        />
-                                                                    </svg>
+                                                                    <CheckIcon className='w-3.5 h-3.5' />
                                                                     Process
                                                                 </button>
                                                                 <button
@@ -1690,70 +1573,26 @@ Reference: ${result.movement.referenceNo}`,
                                                                     className='inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow'
                                                                     title='Cancel Movement'
                                                                 >
-                                                                    <svg
-                                                                        className='w-3.5 h-3.5'
-                                                                        fill='none'
-                                                                        stroke='currentColor'
-                                                                        viewBox='0 0 24 24'
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap='round'
-                                                                            strokeLinejoin='round'
-                                                                            strokeWidth={
-                                                                                2
-                                                                            }
-                                                                            d='M6 18L18 6M6 6l12 12'
-                                                                        />
-                                                                    </svg>
+                                                                    <XIcon className='w-3.5 h-3.5' />
                                                                     Cancel
                                                                 </button>
                                                             </>
                                                         ) : (
                                                             <span className='inline-flex items-center gap-1.5 text-yellow-700 text-xs font-semibold bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200'>
-                                                                <svg
-                                                                    className='w-3.5 h-3.5 animate-pulse'
-                                                                    fill='currentColor'
-                                                                    viewBox='0 0 20 20'
-                                                                >
-                                                                    <path
-                                                                        fillRule='evenodd'
-                                                                        d='M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z'
-                                                                        clipRule='evenodd'
-                                                                    />
-                                                                </svg>
+                                                                <ClockFilledIcon className='w-3.5 h-3.5 animate-pulse' />
                                                                 Awaiting
                                                             </span>
                                                         )
                                                     ) : movement.status ===
                                                       'COMPLETED' ? (
                                                         <span className='inline-flex items-center gap-1.5 text-green-700 text-xs font-semibold bg-green-50 px-3 py-1.5 rounded-lg border border-green-200'>
-                                                            <svg
-                                                                className='w-3.5 h-3.5'
-                                                                fill='currentColor'
-                                                                viewBox='0 0 20 20'
-                                                            >
-                                                                <path
-                                                                    fillRule='evenodd'
-                                                                    d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
-                                                                    clipRule='evenodd'
-                                                                />
-                                                            </svg>
+                                                            <CheckCircleFilledIcon className='w-3.5 h-3.5' />
                                                             Done
                                                         </span>
                                                     ) : movement.status ===
                                                       'CANCELLED' ? (
                                                         <span className='inline-flex items-center gap-1.5 text-red-700 text-xs font-semibold bg-red-50 px-3 py-1.5 rounded-lg border border-red-200'>
-                                                            <svg
-                                                                className='w-3.5 h-3.5'
-                                                                fill='currentColor'
-                                                                viewBox='0 0 20 20'
-                                                            >
-                                                                <path
-                                                                    fillRule='evenodd'
-                                                                    d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
-                                                                    clipRule='evenodd'
-                                                                />
-                                                            </svg>
+                                                            <XCircleFilledIcon className='w-3.5 h-3.5' />
                                                             Cancelled
                                                         </span>
                                                     ) : (
@@ -1803,19 +1642,7 @@ Reference: ${result.movement.referenceNo}`,
                             <div className='bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6 flex justify-between items-center flex-shrink-0 rounded-t-2xl'>
                                 <div>
                                     <h2 className='text-2xl font-bold text-white flex items-center gap-3'>
-                                        <svg
-                                            className='w-7 h-7'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
-                                            />
-                                        </svg>
+                                        <MovementIcon className='w-7 h-7' />
                                         Create Stock Movement
                                     </h2>
                                     <p className='text-primary-100 text-sm mt-1'>
@@ -1843,19 +1670,7 @@ Reference: ${result.movement.referenceNo}`,
                                     className='text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 border border-white/20 hover:border-white/40 shadow-lg transition'
                                     title='Close'
                                 >
-                                    <svg
-                                        className='w-6 h-6'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2.5}
-                                            d='M6 18L18 6M6 6l12 12'
-                                        />
-                                    </svg>
+                                    <XIcon className='w-6 h-6' />
                                 </button>
                             </div>
 
@@ -1868,19 +1683,7 @@ Reference: ${result.movement.referenceNo}`,
                                     {/* Movement Type */}
                                     <div className='bg-slate-50 p-5 rounded-xl border border-slate-200'>
                                         <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                            <svg
-                                                className='w-4 h-4 text-primary-600'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'
-                                                />
-                                            </svg>
+                                            <TagIcon className='w-4 h-4 text-primary-600' />
                                             Movement Type *
                                         </label>
                                         <select
@@ -1946,19 +1749,7 @@ Reference: ${result.movement.referenceNo}`,
                                     {/* Item Selection */}
                                     <div>
                                         <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                            <svg
-                                                className='w-4 h-4 text-primary-600'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-                                                />
-                                            </svg>
+                                            <BoxIcon className='w-4 h-4 text-primary-600' />
                                             Item *
                                         </label>
                                         <select
@@ -2014,19 +1805,7 @@ Reference: ${result.movement.referenceNo}`,
                                     {/* Warehouse */}
                                     <div>
                                         <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                            <svg
-                                                className='w-4 h-4 text-primary-600'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-                                                />
-                                            </svg>
+                                            <WarehouseIcon className='w-4 h-4 text-primary-600' />
                                             Warehouse *
                                         </label>
                                         <select
@@ -2100,25 +1879,7 @@ Reference: ${result.movement.referenceNo}`,
                                     ].includes(createForm.type) && (
                                         <div>
                                             <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                                <svg
-                                                    className='w-4 h-4 text-primary-600'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
-                                                    />
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
-                                                    />
-                                                </svg>
+                                                <LocationPinIcon className='w-4 h-4 text-primary-600' />
                                                 {createForm.type ===
                                                 'ADJUSTMENT'
                                                     ? 'Bin to Adjust'
@@ -2183,25 +1944,7 @@ Reference: ${result.movement.referenceNo}`,
                                     ) && (
                                         <div>
                                             <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                                <svg
-                                                    className='w-4 h-4 text-primary-600'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
-                                                    />
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
-                                                    />
-                                                </svg>
+                                                <LocationPinIcon className='w-4 h-4 text-primary-600' />
                                                 To Bin{' '}
                                                 {createForm.type === 'TRANSFER'
                                                     ? '*'
@@ -2270,19 +2013,7 @@ Reference: ${result.movement.referenceNo}`,
                                     {/* Quantity */}
                                     <div>
                                         <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                            <svg
-                                                className='w-4 h-4 text-primary-600'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M7 20l4-16m2 16l4-16M6 9h14M4 15h14'
-                                                />
-                                            </svg>
+                                            <HashIcon className='w-4 h-4 text-primary-600' />
                                             Quantity *
                                             {createForm.type ===
                                                 'ADJUSTMENT' && (
@@ -2922,19 +2653,7 @@ Reference: ${result.movement.referenceNo}`,
                                     {/* Notes */}
                                     <div>
                                         <label className='flex items-center gap-2 text-sm font-bold text-slate-800 mb-3'>
-                                            <svg
-                                                className='w-4 h-4 text-primary-600'
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth={2}
-                                                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                                                />
-                                            </svg>
+                                            <DocumentIcon className='w-4 h-4 text-primary-600' />
                                             Notes (Optional)
                                         </label>
                                         <textarea
@@ -2967,42 +2686,12 @@ Reference: ${result.movement.referenceNo}`,
                                         >
                                             {creating ? (
                                                 <>
-                                                    <svg
-                                                        className='animate-spin h-5 w-5'
-                                                        fill='none'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <circle
-                                                            className='opacity-25'
-                                                            cx='12'
-                                                            cy='12'
-                                                            r='10'
-                                                            stroke='currentColor'
-                                                            strokeWidth='4'
-                                                        ></circle>
-                                                        <path
-                                                            className='opacity-75'
-                                                            fill='currentColor'
-                                                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                                                        ></path>
-                                                    </svg>
+                                                    <SpinnerIcon className='animate-spin h-5 w-5' />
                                                     Creating Movement...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <svg
-                                                        className='w-5 h-5'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M5 13l4 4L19 7'
-                                                        />
-                                                    </svg>
+                                                    <CheckIcon className='w-5 h-5' />
                                                     Create Movement
                                                 </>
                                             )}

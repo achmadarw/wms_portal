@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Pagination from '@/components/Pagination';
 import {
-    AlertTriangle,
-    Bell,
-    CheckCircle,
-    XCircle,
-    TrendingDown,
-    TrendingUp,
-    Package,
-    RefreshCw,
-} from 'lucide-react';
+    AlertIcon,
+    BellIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    TrendingDownIcon,
+    TrendingUpIcon,
+    BoxIcon,
+    RefreshIcon,
+} from '@/components/icons';
 
 interface StockAlert {
     id: string;
@@ -212,15 +212,15 @@ export default function AlertsPage() {
     const getAlertTypeIcon = (alertType: string) => {
         switch (alertType) {
             case 'OUT_OF_STOCK':
-                return <XCircle className='w-5 h-5' />;
+                return <XCircleIcon className='w-5 h-5' />;
             case 'LOW_STOCK':
-                return <TrendingDown className='w-5 h-5' />;
+                return <TrendingDownIcon className='w-5 h-5' />;
             case 'REORDER_POINT':
-                return <Bell className='w-5 h-5' />;
+                return <BellIcon className='w-5 h-5' />;
             case 'OVERSTOCK':
-                return <TrendingUp className='w-5 h-5' />;
+                return <TrendingUpIcon className='w-5 h-5' />;
             default:
-                return <AlertTriangle className='w-5 h-5' />;
+                return <AlertIcon className='w-5 h-5' />;
         }
     };
 
@@ -254,7 +254,7 @@ export default function AlertsPage() {
                 <div className='flex items-center justify-between'>
                     <div>
                         <div className='flex items-center gap-3 mb-2'>
-                            <Bell className='w-8 h-8' />
+                            <BellIcon className='w-8 h-8' />
                             <h1 className='text-3xl font-bold'>Stock Alerts</h1>
                         </div>
                         <p className='text-red-100'>
@@ -266,7 +266,7 @@ export default function AlertsPage() {
                         disabled={checking}
                         className='flex items-center gap-2 px-6 py-3 bg-white text-red-700 rounded-xl hover:bg-red-50 transition-colors font-semibold disabled:opacity-50'
                     >
-                        <RefreshCw
+                        <RefreshIcon
                             className={`w-5 h-5 ${
                                 checking ? 'animate-spin' : ''
                             }`}
@@ -277,12 +277,12 @@ export default function AlertsPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slideUp'>
                 {/* Total Alerts */}
                 <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl'>
-                            <AlertTriangle className='w-6 h-6 text-slate-700' />
+                            <AlertIcon className='w-6 h-6 text-slate-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -299,7 +299,7 @@ export default function AlertsPage() {
                 <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-red-100 to-red-200 rounded-xl'>
-                            <XCircle className='w-6 h-6 text-red-700' />
+                            <XCircleIcon className='w-6 h-6 text-red-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -316,7 +316,7 @@ export default function AlertsPage() {
                 <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-red-100 to-red-200 rounded-xl'>
-                            <AlertTriangle className='w-6 h-6 text-red-700' />
+                            <AlertIcon className='w-6 h-6 text-red-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -333,7 +333,7 @@ export default function AlertsPage() {
                 <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200'>
                     <div className='flex items-center gap-4'>
                         <div className='p-3 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl'>
-                            <Bell className='w-6 h-6 text-orange-700' />
+                            <BellIcon className='w-6 h-6 text-orange-700' />
                         </div>
                         <div>
                             <p className='text-sm font-medium text-slate-600'>
@@ -352,7 +352,7 @@ export default function AlertsPage() {
                 <h2 className='text-lg font-semibold text-slate-800 mb-4'>
                     Alerts by Type
                 </h2>
-                <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-4 animate-slideUp'>
                     <div className='p-4 bg-red-50 rounded-xl border border-red-200'>
                         <div className='flex items-center justify-between'>
                             <div>
@@ -363,7 +363,7 @@ export default function AlertsPage() {
                                     {summary.outOfStock}
                                 </p>
                             </div>
-                            <XCircle className='w-8 h-8 text-red-600' />
+                            <XCircleIcon className='w-8 h-8 text-red-600' />
                         </div>
                     </div>
                     <div className='p-4 bg-orange-50 rounded-xl border border-orange-200'>
@@ -376,7 +376,7 @@ export default function AlertsPage() {
                                     {summary.lowStock}
                                 </p>
                             </div>
-                            <TrendingDown className='w-8 h-8 text-orange-600' />
+                            <TrendingDownIcon className='w-8 h-8 text-orange-600' />
                         </div>
                     </div>
                     <div className='p-4 bg-yellow-50 rounded-xl border border-yellow-200'>
@@ -389,7 +389,7 @@ export default function AlertsPage() {
                                     {summary.reorderPoint}
                                 </p>
                             </div>
-                            <Bell className='w-8 h-8 text-yellow-600' />
+                            <BellIcon className='w-8 h-8 text-yellow-600' />
                         </div>
                     </div>
                     <div className='p-4 bg-blue-50 rounded-xl border border-blue-200'>
@@ -402,7 +402,7 @@ export default function AlertsPage() {
                                     {summary.overstock}
                                 </p>
                             </div>
-                            <TrendingUp className='w-8 h-8 text-blue-600' />
+                            <TrendingUpIcon className='w-8 h-8 text-blue-600' />
                         </div>
                     </div>
                 </div>
@@ -413,7 +413,7 @@ export default function AlertsPage() {
                 <h2 className='text-lg font-semibold text-slate-800 mb-4'>
                     Filters
                 </h2>
-                <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-4 animate-slideUp'>
                     <div>
                         <label className='block text-sm font-medium text-slate-700 mb-2'>
                             Severity
@@ -515,7 +515,7 @@ export default function AlertsPage() {
                     </div>
                 ) : alerts.length === 0 ? (
                     <div className='text-center py-12'>
-                        <CheckCircle className='w-16 h-16 text-green-500 mx-auto mb-4' />
+                        <CheckCircleIcon className='w-16 h-16 text-green-500 mx-auto mb-4' />
                         <p className='text-slate-600 text-lg'>
                             No alerts found
                         </p>
@@ -571,7 +571,7 @@ export default function AlertsPage() {
                                                 <p className='text-slate-800 font-medium mb-2'>
                                                     {alert.message}
                                                 </p>
-                                                <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+                                                <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm animate-slideUp'>
                                                     <div>
                                                         <p className='text-slate-500'>
                                                             Item

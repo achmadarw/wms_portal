@@ -2,6 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+    WarehouseIcon,
+    PlusIcon,
+    CheckCircleFilledIcon,
+    UserIcon,
+    BoxIcon,
+    ClipboardIcon,
+    LocationPinIcon,
+    XIcon,
+    EditIcon,
+    TrashIcon,
+    CubeIcon,
+    MapIcon,
+    ErrorIcon,
+    CheckIcon,
+    AlertInfoIcon,
+    XCircleFilledIcon,
+    SpinnerIcon,
+} from '@/components/icons';
 
 interface Warehouse {
     id: string;
@@ -366,23 +385,11 @@ export default function WarehousesPage() {
     return (
         <div className='space-y-6'>
             {/* Header */}
-            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white'>
+            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white animate-fadeIn'>
                 <div className='flex justify-between items-center'>
                     <div>
                         <div className='flex items-center gap-3 mb-2'>
-                            <svg
-                                className='w-8 h-8'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-                                />
-                            </svg>
+                            <WarehouseIcon className='w-8 h-8' />
                             <h1 className='text-3xl font-bold'>
                                 Warehouses Management
                             </h1>
@@ -396,19 +403,7 @@ export default function WarehousesPage() {
                             onClick={handleOpenModal}
                             className='flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition font-bold shadow-xl'
                         >
-                            <svg
-                                className='w-5 h-5'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M12 4v16m8-8H4'
-                                />
-                            </svg>
+                            <PlusIcon className='w-5 h-5' />
                             Add New Warehouse
                         </button>
                     )}
@@ -416,8 +411,8 @@ export default function WarehousesPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
-                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+            <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-slideUp'>
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center justify-between'>
                         <div>
                             <div className='text-sm font-semibold text-slate-600'>
@@ -428,23 +423,11 @@ export default function WarehousesPage() {
                             </div>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <svg
-                                className='w-8 h-8 text-white'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-                                />
-                            </svg>
+                            <WarehouseIcon className='w-8 h-8 text-white' />
                         </div>
                     </div>
                 </div>
-                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center justify-between'>
                         <div>
                             <div className='text-sm font-semibold text-slate-600'>
@@ -455,23 +438,11 @@ export default function WarehousesPage() {
                             </div>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <svg
-                                className='w-8 h-8 text-white'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                                />
-                            </svg>
+                            <CheckCircleFilledIcon className='w-8 h-8 text-white' />
                         </div>
                     </div>
                 </div>
-                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center justify-between'>
                         <div>
                             <div className='text-sm font-semibold text-slate-600'>
@@ -482,23 +453,11 @@ export default function WarehousesPage() {
                             </div>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <svg
-                                className='w-8 h-8 text-white'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
-                                />
-                            </svg>
+                            <UserIcon className='w-8 h-8 text-white' />
                         </div>
                     </div>
                 </div>
-                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow'>
+                <div className='bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
                     <div className='flex items-center justify-between'>
                         <div>
                             <div className='text-sm font-semibold text-slate-600'>
@@ -512,19 +471,7 @@ export default function WarehousesPage() {
                             </div>
                         </div>
                         <div className='w-14 h-14 bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl flex items-center justify-center shadow-lg'>
-                            <svg
-                                className='w-8 h-8 text-white'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-                                />
-                            </svg>
+                            <CubeIcon className='w-8 h-8 text-white' />
                         </div>
                     </div>
                 </div>
@@ -534,19 +481,7 @@ export default function WarehousesPage() {
             <div className='bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden'>
                 <div className='px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white'>
                     <h3 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                        <svg
-                            className='w-5 h-5 text-primary-600'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
-                            />
-                        </svg>
+                        <ClipboardIcon className='w-5 h-5 text-primary-600' />
                         All Warehouses
                     </h3>
                 </div>
@@ -600,19 +535,7 @@ export default function WarehousesPage() {
                                     >
                                         <div className='flex flex-col items-center justify-center'>
                                             <div className='w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4'>
-                                                <svg
-                                                    className='w-8 h-8 text-slate-400'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-                                                    />
-                                                </svg>
+                                                <WarehouseIcon className='w-8 h-8 text-slate-400' />
                                             </div>
                                             <p className='text-slate-600 font-medium mb-2'>
                                                 No warehouses found
@@ -656,25 +579,7 @@ export default function WarehousesPage() {
                                         </td>
                                         <td className='px-6 py-4'>
                                             <div className='flex items-start gap-2'>
-                                                <svg
-                                                    className='w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
-                                                    />
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
-                                                    />
-                                                </svg>
+                                                <LocationPinIcon className='w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0' />
                                                 <div>
                                                     <div className='text-sm text-slate-900 font-medium'>
                                                         {warehouse.city},{' '}
@@ -722,19 +627,7 @@ export default function WarehousesPage() {
                                                 </div>
                                             ) : (
                                                 <span className='inline-flex items-center gap-1 text-sm text-slate-400'>
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
-                                                        />
-                                                    </svg>
+                                                    <XIcon className='w-4 h-4' />
                                                     No manager
                                                 </span>
                                             )}
@@ -742,19 +635,7 @@ export default function WarehousesPage() {
                                         <td className='px-6 py-4 whitespace-nowrap'>
                                             <div className='flex items-center gap-2'>
                                                 <div className='w-8 h-8 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg flex items-center justify-center'>
-                                                    <svg
-                                                        className='w-4 h-4 text-amber-700'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-                                                        />
-                                                    </svg>
+                                                    <CubeIcon className='w-4 h-4 text-amber-700' />
                                                 </div>
                                                 <span className='text-sm font-semibold text-slate-900'>
                                                     {warehouse.bins?.length ||
@@ -793,19 +674,7 @@ export default function WarehousesPage() {
                                                     }
                                                     className='inline-flex items-center gap-1 px-3 py-1.5 text-amber-700 hover:text-white hover:bg-amber-600 border border-amber-300 rounded-lg transition-all font-medium'
                                                 >
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-                                                        />
-                                                    </svg>
+                                                    <CubeIcon className='w-4 h-4' />
                                                     Bins
                                                 </button>
                                                 <button
@@ -816,19 +685,7 @@ export default function WarehousesPage() {
                                                     }
                                                     className='inline-flex items-center gap-1 px-3 py-1.5 text-purple-700 hover:text-white hover:bg-purple-600 border border-purple-300 rounded-lg transition-all font-medium'
                                                 >
-                                                    <svg
-                                                        className='w-4 h-4'
-                                                        fill='none'
-                                                        stroke='currentColor'
-                                                        viewBox='0 0 24 24'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7'
-                                                        />
-                                                    </svg>
+                                                    <MapIcon className='w-4 h-4' />
                                                     Layout
                                                 </button>
                                                 {/* Edit button - ADMIN can edit all, SUPERVISOR can edit assigned warehouse */}
@@ -845,19 +702,7 @@ export default function WarehousesPage() {
                                                         }
                                                         className='inline-flex items-center gap-1 px-3 py-1.5 text-primary-700 hover:text-white hover:bg-primary-600 border border-primary-300 rounded-lg transition-all font-medium'
                                                     >
-                                                        <svg
-                                                            className='w-4 h-4'
-                                                            fill='none'
-                                                            stroke='currentColor'
-                                                            viewBox='0 0 24 24'
-                                                        >
-                                                            <path
-                                                                strokeLinecap='round'
-                                                                strokeLinejoin='round'
-                                                                strokeWidth={2}
-                                                                d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                                                            />
-                                                        </svg>
+                                                        <EditIcon className='w-4 h-4' />
                                                         Edit
                                                     </button>
                                                 )}
@@ -873,21 +718,7 @@ export default function WarehousesPage() {
                                                             className='inline-flex items-center gap-1 px-3 py-1.5 text-red-700 hover:text-white hover:bg-red-600 border border-red-300 rounded-lg transition-all font-medium'
                                                             title='Deactivate warehouse'
                                                         >
-                                                            <svg
-                                                                className='w-4 h-4'
-                                                                fill='none'
-                                                                stroke='currentColor'
-                                                                viewBox='0 0 24 24'
-                                                            >
-                                                                <path
-                                                                    strokeLinecap='round'
-                                                                    strokeLinejoin='round'
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                                                                />
-                                                            </svg>
+                                                            <TrashIcon className='w-4 h-4' />
                                                             Delete
                                                         </button>
                                                     )}
@@ -920,19 +751,7 @@ export default function WarehousesPage() {
                             <div className='flex items-center justify-between'>
                                 <div className='flex items-center gap-3'>
                                     <div className='w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center'>
-                                        <svg
-                                            className='w-6 h-6 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
-                                            />
-                                        </svg>
+                                        <WarehouseIcon className='w-6 h-6 text-white' />
                                     </div>
                                     <div>
                                         <h2 className='text-2xl font-bold text-white'>
@@ -949,19 +768,7 @@ export default function WarehousesPage() {
                                     className='text-white hover:text-white hover:bg-white/30 bg-white/10 rounded-xl p-2 transition-all duration-200 border border-white/20 hover:border-white/40 shadow-lg'
                                     title='Close'
                                 >
-                                    <svg
-                                        className='w-6 h-6'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2.5}
-                                            d='M6 18L18 6M6 6l12 12'
-                                        />
-                                    </svg>
+                                    <XIcon className='w-6 h-6' />
                                 </button>
                             </div>
                         </div>
@@ -969,7 +776,7 @@ export default function WarehousesPage() {
                         {/* Modal Body - Scrollable */}
                         <div className='overflow-y-auto flex-1'>
                             <form onSubmit={handleSubmit} className='p-8'>
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 animate-slideUp'>
                                     {/* Warehouse Code */}
                                     <div>
                                         <label className='block text-sm font-bold text-slate-700 mb-2'>
@@ -992,17 +799,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.code && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.code}
                                             </p>
                                         )}
@@ -1030,17 +827,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.name && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.name}
                                             </p>
                                         )}
@@ -1087,17 +874,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.address && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.address}
                                             </p>
                                         )}
@@ -1125,17 +902,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.city && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.city}
                                             </p>
                                         )}
@@ -1163,17 +930,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.state && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.state}
                                             </p>
                                         )}
@@ -1201,17 +958,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.zipCode && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.zipCode}
                                             </p>
                                         )}
@@ -1239,17 +986,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.country && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.country}
                                             </p>
                                         )}
@@ -1297,17 +1034,7 @@ export default function WarehousesPage() {
                                         </select>
                                         {supervisors.length === 0 && (
                                             <p className='text-amber-600 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <AlertInfoIcon className='w-4 h-4' />
                                                 No supervisors found. Please
                                                 create supervisor users first.
                                             </p>
@@ -1332,42 +1059,12 @@ export default function WarehousesPage() {
                                     >
                                         {submitting ? (
                                             <>
-                                                <svg
-                                                    className='animate-spin h-5 w-5'
-                                                    fill='none'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <circle
-                                                        className='opacity-25'
-                                                        cx='12'
-                                                        cy='12'
-                                                        r='10'
-                                                        stroke='currentColor'
-                                                        strokeWidth='4'
-                                                    ></circle>
-                                                    <path
-                                                        className='opacity-75'
-                                                        fill='currentColor'
-                                                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                                                    ></path>
-                                                </svg>
+                                                <SpinnerIcon className='h-5 w-5' />
                                                 Creating...
                                             </>
                                         ) : (
                                             <>
-                                                <svg
-                                                    className='w-5 h-5'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M12 4v16m8-8H4'
-                                                    />
-                                                </svg>
+                                                <PlusIcon className='w-5 h-5' />
                                                 Create Warehouse
                                             </>
                                         )}
@@ -1398,19 +1095,7 @@ export default function WarehousesPage() {
                             <div className='flex items-center justify-between'>
                                 <div className='flex items-center gap-3'>
                                     <div className='w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center'>
-                                        <svg
-                                            className='w-6 h-6 text-white'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                                            />
-                                        </svg>
+                                        <EditIcon className='w-6 h-6 text-white' />
                                     </div>
                                     <div>
                                         <h2 className='text-2xl font-bold text-white'>
@@ -1426,19 +1111,7 @@ export default function WarehousesPage() {
                                     className='w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors text-white'
                                     disabled={submitting}
                                 >
-                                    <svg
-                                        className='w-5 h-5'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M6 18L18 6M6 6l12 12'
-                                        />
-                                    </svg>
+                                    <XIcon className='w-5 h-5' />
                                 </button>
                             </div>
                         </div>
@@ -1446,7 +1119,7 @@ export default function WarehousesPage() {
                         {/* Modal Body - Scrollable */}
                         <div className='flex-1 overflow-y-auto px-8 py-6'>
                             <form onSubmit={handleUpdate}>
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 animate-slideUp'>
                                     {/* Code */}
                                     <div>
                                         <label className='block text-sm font-bold text-slate-700 mb-2'>
@@ -1469,17 +1142,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.code && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.code}
                                             </p>
                                         )}
@@ -1507,17 +1170,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.name && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.name}
                                             </p>
                                         )}
@@ -1564,17 +1217,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.address && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.address}
                                             </p>
                                         )}
@@ -1602,17 +1245,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.city && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.city}
                                             </p>
                                         )}
@@ -1640,17 +1273,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.state && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.state}
                                             </p>
                                         )}
@@ -1678,17 +1301,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.zipCode && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.zipCode}
                                             </p>
                                         )}
@@ -1716,17 +1329,7 @@ export default function WarehousesPage() {
                                         />
                                         {formErrors.country && (
                                             <p className='text-red-500 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.country}
                                             </p>
                                         )}
@@ -1774,34 +1377,14 @@ export default function WarehousesPage() {
                                         </select>
                                         {supervisors.length === 0 && (
                                             <p className='text-amber-600 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <AlertInfoIcon className='w-4 h-4' />
                                                 No supervisors found. Please
                                                 create supervisor users first.
                                             </p>
                                         )}
                                         {formErrors.managerId && (
                                             <p className='text-red-600 text-sm mt-1.5 flex items-center gap-1'>
-                                                <svg
-                                                    className='w-4 h-4'
-                                                    fill='currentColor'
-                                                    viewBox='0 0 20 20'
-                                                >
-                                                    <path
-                                                        fillRule='evenodd'
-                                                        d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                                                        clipRule='evenodd'
-                                                    />
-                                                </svg>
+                                                <ErrorIcon className='w-4 h-4' />
                                                 {formErrors.managerId}
                                             </p>
                                         )}
@@ -1812,17 +1395,7 @@ export default function WarehousesPage() {
                                         <div className='md:col-span-2'>
                                             <div className='bg-red-50 border-2 border-red-200 rounded-xl p-4'>
                                                 <div className='flex items-start gap-3'>
-                                                    <svg
-                                                        className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5'
-                                                        fill='currentColor'
-                                                        viewBox='0 0 20 20'
-                                                    >
-                                                        <path
-                                                            fillRule='evenodd'
-                                                            d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
-                                                            clipRule='evenodd'
-                                                        />
-                                                    </svg>
+                                                    <XCircleFilledIcon className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5' />
                                                     <div>
                                                         <h4 className='font-semibold text-red-900'>
                                                             Error
@@ -1854,42 +1427,12 @@ export default function WarehousesPage() {
                                     >
                                         {submitting ? (
                                             <>
-                                                <svg
-                                                    className='animate-spin h-5 w-5'
-                                                    fill='none'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <circle
-                                                        className='opacity-25'
-                                                        cx='12'
-                                                        cy='12'
-                                                        r='10'
-                                                        stroke='currentColor'
-                                                        strokeWidth='4'
-                                                    ></circle>
-                                                    <path
-                                                        className='opacity-75'
-                                                        fill='currentColor'
-                                                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                                                    ></path>
-                                                </svg>
+                                                <SpinnerIcon className='h-5 w-5' />
                                                 Updating...
                                             </>
                                         ) : (
                                             <>
-                                                <svg
-                                                    className='w-5 h-5'
-                                                    fill='none'
-                                                    stroke='currentColor'
-                                                    viewBox='0 0 24 24'
-                                                >
-                                                    <path
-                                                        strokeLinecap='round'
-                                                        strokeLinejoin='round'
-                                                        strokeWidth={2}
-                                                        d='M5 13l4 4L19 7'
-                                                    />
-                                                </svg>
+                                                <CheckIcon className='w-5 h-5' />
                                                 Update Warehouse
                                             </>
                                         )}
