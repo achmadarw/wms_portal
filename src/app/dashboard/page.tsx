@@ -12,11 +12,7 @@ import ActivityItem from '@/components/ActivityItem';
 import LowStockItem from '@/components/LowStockItem';
 import StatusItem from '@/components/StatusItem';
 
-// Only skeleton needs dynamic import
-const DashboardSkeleton = dynamic(
-    () => import('@/components/DashboardSkeleton'),
-    { ssr: false }
-);
+import PageSkeleton from '@/components/PageSkeleton';
 
 // Icons di-import secara normal karena ringan
 import {
@@ -145,7 +141,7 @@ export default function DashboardPage() {
     };
 
     if (loading) {
-        return <DashboardSkeleton />;
+        return <PageSkeleton variant='dashboard' hasStats={false} />;
     }
 
     return (

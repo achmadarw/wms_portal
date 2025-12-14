@@ -13,7 +13,7 @@ import {
     SearchIcon,
     PlusIcon,
 } from '@/components/icons';
-import TableSkeleton from '@/components/TableSkeleton';
+import PageSkeleton from '@/components/PageSkeleton';
 
 interface Reservation {
     id: string;
@@ -314,7 +314,7 @@ export default function ReservationsPage() {
     };
 
     if (loading) {
-        return <TableSkeleton rows={10} columns={7} />;
+        return <PageSkeleton tableRows={10} tableColumns={7} />;
     }
 
     return (

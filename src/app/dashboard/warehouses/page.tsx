@@ -20,6 +20,10 @@ import {
     AlertInfoIcon,
     XCircleFilledIcon,
     SpinnerIcon,
+    ChevronLeftDoubleIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    ChevronRightDoubleIcon,
 } from '@/components/icons';
 
 interface Warehouse {
@@ -84,6 +88,10 @@ export default function WarehousesPage() {
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         // Load current user from localStorage
@@ -382,6 +390,12 @@ export default function WarehousesPage() {
         }
     };
 
+    // Pagination calculations
+    const totalPages = Math.ceil(warehouses.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedWarehouses = warehouses.slice(startIndex, endIndex);
+
     return (
         <div className='space-y-6'>
             {/* Header */}
@@ -548,7 +562,7 @@ export default function WarehousesPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                warehouses.map((warehouse) => (
+                                paginatedWarehouses.map((warehouse) => (
                                     <tr
                                         key={warehouse.id}
                                         className='hover:bg-gradient-to-r hover:from-primary-50/30 hover:to-transparent transition-all duration-200'
@@ -730,6 +744,144 @@ export default function WarehousesPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {warehouses.length > 0 && (
+                    <div className='p-6 border-t border-slate-200 bg-slate-50'>
+                        <div className='flex items-center justify-between'>
+                            {/* Items Per Page Selector */}
+                            <div className='flex items-center gap-3'>
+                                <div className='flex items-center gap-2'>
+                                    <label className='text-sm text-slate-600 font-medium'>
+                                        Warehouses per page:
+                                    </label>
+                                    <select
+                                        value={itemsPerPage}
+                                        onChange={(e) => {
+                                            setItemsPerPage(
+                                                Number(e.target.value)
+                                            );
+                                            setCurrentPage(1);
+                                        }}
+                                        className='px-3 py-1.5 border border-slate-300 rounded-lg bg-white text-slate-700 font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
+                                    >
+                                        <option value={5}>5</option>
+                                        <option value={10}>10</option>
+                                        <option value={20}>20</option>
+                                        <option value={50}>50</option>
+                                        <option value={100}>100</option>
+                                    </select>
+                                </div>
+
+                                {/* Results Info */}
+                                <div className='text-sm text-slate-600'>
+                                    Showing{' '}
+                                    <span className='font-semibold text-slate-900'>
+                                        {startIndex + 1}
+                                    </span>{' '}
+                                    to{' '}
+                                    <span className='font-semibold text-slate-900'>
+                                        {Math.min(endIndex, warehouses.length)}
+                                    </span>{' '}
+                                    of{' '}
+                                    <span className='font-semibold text-slate-900'>
+                                        {warehouses.length}
+                                    </span>{' '}
+                                    warehouses
+                                </div>
+                            </div>
+
+                            {/* Pagination Buttons */}
+                            <div className='flex items-center gap-2'>
+                                <button
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='First page'
+                                >
+                                    <ChevronLeftDoubleIcon className='w-5 h-5' />
+                                </button>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((prev) =>
+                                            Math.max(1, prev - 1)
+                                        )
+                                    }
+                                    disabled={currentPage === 1}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Previous page'
+                                >
+                                    <ChevronLeftIcon className='w-5 h-5' />
+                                </button>
+
+                                {/* Page Numbers */}
+                                <div className='flex items-center gap-1'>
+                                    {Array.from(
+                                        { length: totalPages },
+                                        (_, i) => i + 1
+                                    )
+                                        .filter((page) => {
+                                            return (
+                                                page === 1 ||
+                                                page === totalPages ||
+                                                Math.abs(page - currentPage) <=
+                                                    1
+                                            );
+                                        })
+                                        .map((page, index, array) => (
+                                            <div
+                                                key={page}
+                                                className='flex items-center'
+                                            >
+                                                {index > 0 &&
+                                                    array[index - 1] !==
+                                                        page - 1 && (
+                                                        <span className='px-2 text-slate-400'>
+                                                            ...
+                                                        </span>
+                                                    )}
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage(page)
+                                                    }
+                                                    className={`px-4 py-2 rounded-lg font-medium transition ${
+                                                        currentPage === page
+                                                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
+                                                            : 'border border-slate-300 hover:bg-slate-100 text-slate-700'
+                                                    }`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            </div>
+                                        ))}
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((prev) =>
+                                            Math.min(totalPages, prev + 1)
+                                        )
+                                    }
+                                    disabled={currentPage === totalPages}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Next page'
+                                >
+                                    <ChevronRightIcon className='w-5 h-5' />
+                                </button>
+
+                                <button
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                    className='px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition'
+                                    title='Last page'
+                                >
+                                    <ChevronRightDoubleIcon className='w-5 h-5' />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Create Warehouse Modal */}

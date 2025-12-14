@@ -793,6 +793,7 @@ export default function WarehouseLayoutPage() {
                         width: '100vw',
                         height: '100vh',
                         margin: 0,
+                        padding: '1rem',
                         zIndex: 100000,
                     }}
                 >

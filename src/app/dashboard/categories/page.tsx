@@ -16,7 +16,7 @@ import {
     ChevronDownIcon,
 } from '@/components/icons';
 import { User } from '@prisma/client';
-import TableSkeleton from '@/components/TableSkeleton';
+import PageSkeleton from '@/components/PageSkeleton';
 
 interface Category {
     id: string;
@@ -373,7 +373,7 @@ export default function CategoriesPage() {
     };
 
     if (loading) {
-        return <TableSkeleton rows={10} columns={5} />;
+        return <PageSkeleton tableRows={10} tableColumns={5} />;
     }
 
     const topLevelCategories = filteredCategories.filter(

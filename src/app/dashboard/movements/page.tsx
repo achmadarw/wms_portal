@@ -6,7 +6,7 @@ import Alert from '@/components/Alert';
 import { useAlert } from '@/hooks/useAlert';
 import Pagination from '@/components/Pagination';
 import { withProgress } from '@/lib/progress';
-import MovementSkeleton from '@/components/MovementSkeleton';
+import PageSkeleton from '@/components/PageSkeleton';
 import {
     MovementIcon,
     PlusIcon,
@@ -923,7 +923,14 @@ Reference: ${result.movement.referenceNo}`,
     const totalPages = Math.ceil(movements.length / itemsPerPage);
 
     if (loading) {
-        return <MovementSkeleton />;
+        return (
+            <PageSkeleton
+                hasFilters={true}
+                filterCount={6}
+                tableRows={15}
+                tableColumns={10}
+            />
+        );
     }
 
     return (
@@ -1627,14 +1634,14 @@ Reference: ${result.movement.referenceNo}`,
                 {/* Create Movement Modal */}
                 {showCreateModal && (
                     <div
-                        className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[9999] animate-fadeIn'
+                        className='fixed top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100000] animate-fadeIn'
                         style={{
                             position: 'fixed',
                             width: '100vw',
                             height: '100vh',
                             margin: 0,
                             padding: '1rem',
-                            zIndex: 9999,
+                            zIndex: 100000,
                         }}
                     >
                         <div className='bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col animate-slideUp'>

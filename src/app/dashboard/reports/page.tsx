@@ -177,21 +177,138 @@ export default function ReportsPage() {
     return (
         <div className='space-y-6'>
             {/* Header */}
-            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white'>
-                <div className='flex items-center gap-4'>
-                    <div className='w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20'>
-                        <ChartIcon className='w-8 h-8' />
-                    </div>
-                    <div>
-                        <h1 className='text-4xl font-bold mb-2'>
-                            Inventory Reports & Analytics
-                        </h1>
-                        <p className='text-primary-100 text-lg'>
-                            Analyze stock levels and movement patterns
-                        </p>
+            <div className='bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 text-white animate-fadeIn'>
+                <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-4'>
+                        <div className='w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20'>
+                            <ChartIcon className='w-8 h-8' />
+                        </div>
+                        <div>
+                            <h1 className='text-4xl font-bold mb-2'>
+                                Inventory Reports & Analytics
+                            </h1>
+                            <p className='text-primary-100 text-lg'>
+                                Analyze stock levels and movement patterns
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Stats Cards */}
+            {stockSummary && activeReport === 'stock' && (
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-slideUp'>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Total Items
+                                </div>
+                                <div className='text-3xl font-bold text-slate-900 mt-2'>
+                                    {stockSummary.totalItems || 0}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Low Stock
+                                </div>
+                                <div className='text-3xl font-bold text-orange-600 mt-2'>
+                                    {stockSummary.lowStockCount || 0}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Out of Stock
+                                </div>
+                                <div className='text-3xl font-bold text-red-600 mt-2'>
+                                    {stockSummary.outOfStockCount || 0}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Total Value
+                                </div>
+                                <div className='text-3xl font-bold text-green-600 mt-2'>
+                                    ${stockSummary.totalValue?.toFixed(0) || 0}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {movementSummary && activeReport === 'movements' && (
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-6 animate-slideUp'>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Total Movements
+                                </div>
+                                <div className='text-3xl font-bold text-slate-900 mt-2'>
+                                    {movementSummary.summary.totalMovements}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Inbound
+                                </div>
+                                <div className='text-3xl font-bold text-green-600 mt-2'>
+                                    {
+                                        movementSummary.summary.byType.inbound
+                                            .count
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Outbound
+                                </div>
+                                <div className='text-3xl font-bold text-red-600 mt-2'>
+                                    {
+                                        movementSummary.summary.byType.outbound
+                                            .count
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-105'>
+                        <div className='flex items-center justify-between'>
+                            <div>
+                                <div className='text-sm font-semibold text-slate-600'>
+                                    Avg. Per Day
+                                </div>
+                                <div className='text-3xl font-bold text-blue-600 mt-2'>
+                                    {movementSummary.summary.averageMovementsPerDay.toFixed(
+                                        1
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Report Type Tabs */}
             <div className='bg-white rounded-2xl shadow-lg border border-slate-200'>
